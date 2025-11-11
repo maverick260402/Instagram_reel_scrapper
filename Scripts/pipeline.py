@@ -6,7 +6,7 @@ import gzip, brotli, zlib
 from pathlib import Path
 import pandas as pd
 import os
-
+import time
 
 def get_target_id(username: str):
 
@@ -207,21 +207,26 @@ def get_meta_data(meta_output_path: str) -> pd.DataFrame:
     return df
 
 def main():
-    username = "brut.india"
-    target_id = get_target_id(username)
-    if target_id:
-        print(f"Target ID for {username}: {target_id}")
-    else:
-        print(f"Failed to retrieve Target ID for {username}.")
 
-    meta_output_path = get_meta_date(target_id, username)
-    if meta_output_path:
-        print(f"Meta data saved to: {meta_output_path}")
-        # Continue with the next steps in your pipeline
-        df_result = get_meta_data(meta_output_path)
-        print(df_result)
-    else:
-        print("Failed to retrieve meta data.")
+    usernames = {"brut.india","sydney_sweeney","sabrinacarpenter"}
+    for username in usernames:
+        print(f"\nProcessing username: {username}")
+        target_id = get_target_id(username)
+        if target_id:
+            print(f"Target ID for {username}: {target_id}")
+        else:
+            print(f"Failed to retrieve Target ID for {username}.")
+
+        meta_output_path = get_meta_date(target_id, username)
+        if meta_output_path:
+            print(f"Meta data saved to: {meta_output_path}")
+            # Continue with the next steps in your pipeline
+            df_result = get_meta_data(meta_output_path)
+            print(df_result)
+        else:
+            print("Failed to retrieve meta data.")
+        print("Sleeping for 30 seconds to avoid rate limiting...")
+        time.sleep(29)
 
 if __name__ == "__main__":
     main()
