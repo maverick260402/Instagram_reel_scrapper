@@ -303,6 +303,107 @@ function addActivity(message, type = 'info') {
     }
 }
 
+async function pollJobStatus(backendJobId, localJobId) {
+    // Poll the backend for job status updates
+    const pollInterval = 2000; // Poll every 2 seconds
+    let attempts = 0;
+    const maxAttempts = 300; // 10 minutes max (300 * 2 seconds)
+
+    const poll = async () => {
+        try {
+            attempts++;
+
+            console.log(`📊 Polling job status (attempt ${attempts})...`);
+
+            const response = await fetch(`${API_URL}/api/job/${backendJobId}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+            }
+
+            const jobData = await response.json();
+
+            console.log('Job status:', {
+                status: jobData.status,
+                progress: jobData.progress,
+                current_username: jobData.current_username
+            });
+
+            // Update local job with backend data
+            const jobIndex = jobHistory.findIndex(j => j.id === localJobId);
+            if (jobIndex !== -1) {
+                jobHistory[jobIndex].progress = jobData.progress || 0;
+                jobHistory[jobIndex].backendJobId = backendJobId;
+
+                if (jobData.status === 'completed') {
+                    jobHistory[jobIndex].status = 'success';
+                    jobHistory[jobIndex].results = jobData.results;
+                    jobHistory[jobIndex].endTime = Date.now();
+                    jobHistory[jobIndex].duration = jobData.duration ? jobData.duration * 1000 : (Date.now() - jobHistory[jobIndex].startTime);
+                    jobHistory[jobIndex].progress = 100;
+
+                    saveJobHistory();
+
+                    console.log('✅ Job completed successfully!');
+
+                    // Display results
+                    displayResults(jobData.results);
+
+                    // Update UI
+                    statStatus.textContent = 'Completed';
+                    statStatus.style.color = 'var(--success-color)';
+                    addActivity(`Scraping completed successfully`);
+                    showNotification('Scraping completed successfully!', 'success');
+
+                    // Re-enable inputs
+                    addUsernameBtn.disabled = false;
+                    addMultipleBtn.disabled = false;
+                    clearAllBtn.disabled = false;
+                    updateScrapeButton();
+
+                    return; // Stop polling
+                } else {
+                    saveJobHistory();
+                }
+            }
+
+            // Continue polling if job is still running
+            if (jobData.status === 'running' && attempts < maxAttempts) {
+                setTimeout(poll, pollInterval);
+            } else if (attempts >= maxAttempts) {
+                console.error('❌ Polling timed out after maximum attempts');
+                throw new Error('Job polling timed out');
+            }
+
+        } catch (error) {
+            console.error('Polling error:', error);
+
+            const jobIndex = jobHistory.findIndex(j => j.id === localJobId);
+            if (jobIndex !== -1) {
+                jobHistory[jobIndex].status = 'failed';
+                jobHistory[jobIndex].error = error.message;
+                jobHistory[jobIndex].endTime = Date.now();
+                jobHistory[jobIndex].duration = Date.now() - jobHistory[jobIndex].startTime;
+                saveJobHistory();
+            }
+
+            statStatus.textContent = 'Error';
+            statStatus.style.color = 'var(--error-color)';
+            addActivity(`Scraping failed: ${error.message}`);
+            showNotification(`Error: ${error.message}`, 'error');
+
+            // Re-enable inputs
+            addUsernameBtn.disabled = false;
+            addMultipleBtn.disabled = false;
+            clearAllBtn.disabled = false;
+            updateScrapeButton();
+        }
+    };
+
+    // Start polling
+    setTimeout(poll, pollInterval);
+}
+
 async function handleScrape() {
     const reelCount = parseInt(reelCountInput.value) || 20;
 
@@ -316,30 +417,31 @@ async function handleScrape() {
         return;
     }
 
-    // Create job record
-    const jobId = Date.now();
+    // Create local job record
+    const localJobId = Date.now();
     const job = {
-        id: jobId,
+        id: localJobId,
         timestamp: new Date().toISOString(),
         usernames: [...usernames],
         reelCount: reelCount,
         status: 'running',
         results: [],
         startTime: Date.now(),
-        progress: 0
+        progress: 0,
+        backendJobId: null
     };
 
     addJobToHistory(job);
 
     // Store current job ID for tracking
-    window.currentJobId = jobId;
+    window.currentJobId = localJobId;
 
     // Update status
     statStatus.textContent = 'Scraping...';
     statStatus.style.color = 'var(--warning-color)';
     addActivity(`Started scraping ${usernames.length} account(s)`);
 
-    // Hide progress and results sections (progress only shown in Job Tracker)
+    // Hide progress and results sections
     progressSection.style.display = 'none';
     resultsSection.style.display = 'none';
 
@@ -350,17 +452,13 @@ async function handleScrape() {
     clearAllBtn.disabled = true;
 
     try {
-        // Add keepalive and signal for long-running requests
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minute timeout
-
         console.log('🚀 Sending scrape request to backend...', {
             usernames: usernames,
             reel_count: reelCount,
-            timestamp: new Date().toISOString(),
-            estimated_time: `~${(usernames.length * 3 * (Math.ceil(reelCount / 50)))} seconds`
+            timestamp: new Date().toISOString()
         });
 
+        // Send request to start job (returns immediately)
         const response = await fetch(`${API_URL}/api/scrape`, {
             method: 'POST',
             headers: {
@@ -369,87 +467,39 @@ async function handleScrape() {
             body: JSON.stringify({
                 usernames: usernames,
                 reel_count: reelCount
-            }),
-            signal: controller.signal
+            })
         });
-
-        clearTimeout(timeoutId);
 
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
-        let data;
-        try {
-            data = await response.json();
-            console.log('✅ Received response from backend:', {
-                status: data.status,
-                totalResults: data.results.length,
-                successful: data.results.filter(r => r.status === 'success').length,
-                failed: data.results.filter(r => r.status === 'failed').length,
-                results: data.results
-            });
-        } catch (parseError) {
-            console.error('Failed to parse JSON response:', parseError);
-            throw new Error(`Failed to parse response: ${parseError.message}`);
-        }
+        const data = await response.json();
+        console.log('✅ Job started:', data);
 
-        // Display results
-        displayResults(data.results);
+        if (data.job_id) {
+            // Update local job with backend job ID
+            const jobIndex = jobHistory.findIndex(j => j.id === localJobId);
+            if (jobIndex !== -1) {
+                jobHistory[jobIndex].backendJobId = data.job_id;
+                saveJobHistory();
+            }
 
-        // Update job status
-        console.log('📝 Updating job status...');
-        console.log('   Looking for job ID:', jobId);
-        console.log('   Current jobHistory length:', jobHistory.length);
-        const jobIndex = jobHistory.findIndex(j => j.id === jobId);
-        console.log('   Found job at index:', jobIndex);
+            // Start polling for status
+            pollJobStatus(data.job_id, localJobId);
 
-        if (jobIndex !== -1) {
-            console.log('   Before update:', {
-                id: jobHistory[jobIndex].id,
-                status: jobHistory[jobIndex].status,
-                progress: jobHistory[jobIndex].progress
-            });
-
-            jobHistory[jobIndex].status = 'success';
-            jobHistory[jobIndex].results = data.results;
-            jobHistory[jobIndex].endTime = Date.now();
-            jobHistory[jobIndex].duration = jobHistory[jobIndex].endTime - jobHistory[jobIndex].startTime;
-            jobHistory[jobIndex].progress = 100;
-
-            console.log('   After update:', {
-                id: jobHistory[jobIndex].id,
-                status: jobHistory[jobIndex].status,
-                progress: jobHistory[jobIndex].progress,
-                resultsCount: jobHistory[jobIndex].results.length
-            });
-
-            saveJobHistory();
-            console.log('✅ Job #' + jobId + ' updated to SUCCESS and saved to localStorage');
+            showNotification('Scraping job started! Check Job Tracker for progress.', 'success');
         } else {
-            console.error('❌ Could not find job to update. JobId:', jobId);
-            console.error('   Available job IDs:', jobHistory.map(j => j.id));
+            throw new Error('No job_id received from server');
         }
-
-        // Update status
-        statStatus.textContent = 'Completed';
-        statStatus.style.color = 'var(--success-color)';
-        addActivity(`Scraping completed successfully`);
-
-        showNotification('Scraping completed successfully!', 'success');
 
     } catch (error) {
         console.error('Fetch error:', error);
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
 
-        let errorMessage = error.message;
+        let errorMessage = error.message || 'Unknown error';
 
-        // Handle abort/timeout errors
-        if (error.name === 'AbortError') {
-            errorMessage = 'Request timed out after 10 minutes. The scraping may still be running on the server.';
-        } else if (error.message === 'Failed to fetch') {
+        if (error.message === 'Failed to fetch') {
             errorMessage = 'Network error. Please check if the backend server is running on localhost:8000';
         }
 
@@ -459,18 +509,15 @@ async function handleScrape() {
         addActivity(`Scraping failed: ${errorMessage}`);
 
         // Update job status
-        const jobIndex = jobHistory.findIndex(j => j.id === jobId);
+        const jobIndex = jobHistory.findIndex(j => j.id === localJobId);
         if (jobIndex !== -1) {
             jobHistory[jobIndex].status = 'failed';
             jobHistory[jobIndex].error = errorMessage;
             jobHistory[jobIndex].endTime = Date.now();
-            jobHistory[jobIndex].duration = jobHistory[jobIndex].endTime - jobHistory[jobIndex].startTime;
+            jobHistory[jobIndex].duration = Date.now() - jobHistory[jobIndex].startTime;
             saveJobHistory();
-            console.log('Job updated to FAILED:', jobHistory[jobIndex]);
-        } else {
-            console.error('Could not find job to update:', jobId);
         }
-    } finally {
+
         // Re-enable inputs
         addUsernameBtn.disabled = false;
         addMultipleBtn.disabled = false;
