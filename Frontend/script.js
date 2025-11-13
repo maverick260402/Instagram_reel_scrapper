@@ -124,10 +124,39 @@ function navigateToPage(page) {
                 updatedStatuses: updatedHistory.map(j => ({ id: j.id, status: j.status }))
             });
 
-            // Only re-render if history actually changed
-            if (JSON.stringify(updatedHistory) !== JSON.stringify(jobHistory)) {
+            // Check if history actually changed using a more reliable comparison
+            let hasChanges = false;
+
+            // Different number of jobs
+            if (updatedHistory.length !== jobHistory.length) {
+                hasChanges = true;
+                console.log('Change detected: Different job counts');
+            } else {
+                // Compare each job's key properties
+                for (let i = 0; i < updatedHistory.length; i++) {
+                    const updated = updatedHistory[i];
+                    const current = jobHistory[i];
+
+                    if (updated.id !== current.id ||
+                        updated.status !== current.status ||
+                        updated.progress !== current.progress ||
+                        (updated.results && !current.results) ||
+                        (updated.results && current.results && updated.results.length !== current.results.length)) {
+                        hasChanges = true;
+                        console.log(`Change detected in job ${updated.id}:`, {
+                            oldStatus: current.status,
+                            newStatus: updated.status,
+                            oldProgress: current.progress,
+                            newProgress: updated.progress
+                        });
+                        break;
+                    }
+                }
+            }
+
+            if (hasChanges) {
                 jobHistory = updatedHistory;
-                console.log('Auto-refreshed job history - found updates!');
+                console.log('✅ Auto-refreshed job history - found updates!');
                 renderJobHistory();
             }
         }, 2000); // Check every 2 seconds
@@ -370,24 +399,37 @@ async function handleScrape() {
         displayResults(data.results);
 
         // Update job status
-        console.log('Looking for job with ID:', jobId);
-        console.log('Current jobHistory:', jobHistory);
+        console.log('📝 Updating job status...');
+        console.log('   Looking for job ID:', jobId);
+        console.log('   Current jobHistory length:', jobHistory.length);
         const jobIndex = jobHistory.findIndex(j => j.id === jobId);
-        console.log('Found job at index:', jobIndex);
+        console.log('   Found job at index:', jobIndex);
 
         if (jobIndex !== -1) {
-            console.log('Before update:', JSON.stringify(jobHistory[jobIndex]));
+            console.log('   Before update:', {
+                id: jobHistory[jobIndex].id,
+                status: jobHistory[jobIndex].status,
+                progress: jobHistory[jobIndex].progress
+            });
+
             jobHistory[jobIndex].status = 'success';
             jobHistory[jobIndex].results = data.results;
             jobHistory[jobIndex].endTime = Date.now();
             jobHistory[jobIndex].duration = jobHistory[jobIndex].endTime - jobHistory[jobIndex].startTime;
             jobHistory[jobIndex].progress = 100;
-            console.log('After update:', JSON.stringify(jobHistory[jobIndex]));
+
+            console.log('   After update:', {
+                id: jobHistory[jobIndex].id,
+                status: jobHistory[jobIndex].status,
+                progress: jobHistory[jobIndex].progress,
+                resultsCount: jobHistory[jobIndex].results.length
+            });
+
             saveJobHistory();
-            console.log('✅ Job updated to SUCCESS and saved to localStorage');
+            console.log('✅ Job #' + jobId + ' updated to SUCCESS and saved to localStorage');
         } else {
             console.error('❌ Could not find job to update. JobId:', jobId);
-            console.error('Available job IDs:', jobHistory.map(j => j.id));
+            console.error('   Available job IDs:', jobHistory.map(j => j.id));
         }
 
         // Update status
@@ -489,7 +531,16 @@ function saveJobHistory() {
     }
     const jsonData = JSON.stringify(jobHistory);
     localStorage.setItem('jobHistory', jsonData);
-    console.log('Saved job history to localStorage:', jobHistory.length, 'jobs');
+    console.log('💾 Saved job history to localStorage:', jobHistory.length, 'jobs');
+
+    // Verify save was successful
+    const verification = localStorage.getItem('jobHistory');
+    if (verification !== jsonData) {
+        console.error('❌ LocalStorage save verification failed! Retrying...');
+        localStorage.setItem('jobHistory', jsonData);
+    } else {
+        console.log('✅ LocalStorage save verified successfully');
+    }
 }
 
 function handleClearHistory() {
