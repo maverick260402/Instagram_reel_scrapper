@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Reel Scraper</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar-left">
+            <div class="sidebar-brand">
+                <svg class="brand-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="brand-text">IG Scraper</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="scraper">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 3.33333V16.6667M3.33333 10H16.6667" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span class="nav-text">Scraper</span>
+                </a>
+
+                <a href="#" class="nav-item" data-page="job-tracker">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="3" y="3" width="14" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M7 10L9 12L13 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="nav-text">Job Tracker</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="main-container">
+            <header class="top-header">
+                <div class="header-content">
+                    <h1 class="app-title">Instagram Reel Scraper</h1>
+                    <p class="app-subtitle">Scrape Instagram reels data effortlessly</p>
+                </div>
+            </header>
+
+            <!-- Scraper Page -->
+            <div class="page-content" id="scraper-page">
+                <div class="content-wrapper">
+                    <!-- Single Username Input Section -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Add Single Username</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-row">
+                            <input
+                                type="text"
+                                id="singleUsername"
+                                placeholder="Enter Instagram username"
+                                class="input-field"
+                            />
+                            <button id="addUsernameBtn" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Added Usernames Display -->
+                <section class="card" id="usernamesSection" style="display: none;">
+                    <div class="card-header">
+                        <h3 class="card-title">Added Usernames</h3>
+                        <button id="clearAllBtn" class="btn btn-text">Clear All</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="usernames-grid" id="usernamesList"></div>
+                    </div>
+                </section>
+
+                <!-- Separator -->
+                <div class="divider">
+                    <span class="divider-text">OR</span>
+                </div>
+
+                <!-- Multiple Usernames Input Section -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Add Multiple Usernames</h2>
+                        <span class="card-hint">Enter one username per line</span>
+                    </div>
+                    <div class="card-body">
+                        <textarea
+                            id="multipleUsernames"
+                            placeholder="username1&#10;username2&#10;username3"
+                            class="textarea-field"
+                            rows="8"
+                        ></textarea>
+                        <button id="addMultipleBtn" class="btn btn-primary btn-full">Submit All</button>
+                    </div>
+                </section>
+
+                <!-- Reel Count Input Section -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Number of Reels</h2>
+                    </div>
+                    <div class="card-body">
+                        <input
+                            type="number"
+                            id="reelCount"
+                            placeholder="Enter number of reels to scrape"
+                            class="input-field"
+                            min="1"
+                            value="20"
+                        />
+                    </div>
+                </section>
+
+                <!-- Scrape Button -->
+                <div class="action-bar">
+                    <button id="scrapeBtn" class="btn btn-primary btn-large" disabled>
+                        Start Scraping
+                    </button>
+                </div>
+
+                <!-- Progress Section -->
+                <section class="card" id="progressSection" style="display: none;">
+                    <div class="card-header">
+                        <h3 class="card-title">Scraping Progress</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <p class="progress-text" id="progressText">Processing...</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Results Section -->
+                <section class="card" id="resultsSection" style="display: none;">
+                    <div class="card-header">
+                        <h3 class="card-title">Scraping Results</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="results-list" id="resultsContainer"></div>
+                    </div>
+                </section>
+                </div>
+            </div>
+
+            <!-- Job Tracker Page -->
+            <div class="page-content" id="job-tracker-page" style="display: none;">
+                <div class="content-wrapper">
+                    <section class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Job History</h2>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button id="refreshHistoryBtn" class="btn btn-text">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: middle; margin-right: 0.25rem;">
+                                        <path d="M13.65 2.35C12.2 0.9 10.21 0 8 0C3.58 0 0.01 3.58 0.01 8C0.01 12.42 3.58 16 8 16C11.73 16 14.84 13.45 15.73 10H13.65C12.83 12.33 10.61 14 8 14C4.69 14 2 11.31 2 8C2 4.69 4.69 2 8 2C9.66 2 11.14 2.69 12.22 3.78L9 7H16V0L13.65 2.35Z" fill="currentColor"/>
+                                    </svg>
+                                    Refresh
+                                </button>
+                                <button id="clearHistoryBtn" class="btn btn-text">Clear History</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="jobs-list" id="jobsList">
+                                <div class="empty-state">No jobs yet. Start scraping to see job history.</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar Navigation -->
+        <aside class="sidebar-right">
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Quick Stats</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Total Usernames</span>
+                    <span class="stat-value" id="statTotalUsernames">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Reels per Account</span>
+                    <span class="stat-value" id="statReelsCount">20</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Status</span>
+                    <span class="stat-value stat-status" id="statStatus">Ready</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Recent Activity</h3>
+                <div class="activity-list" id="activityList">
+                    <p class="empty-state">No activity yet</p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Info</h3>
+                <div class="info-item">
+                    <svg class="info-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 1.5C4.41 1.5 1.5 4.41 1.5 8C1.5 11.59 4.41 14.5 8 14.5C11.59 14.5 14.5 11.59 14.5 8C14.5 4.41 11.59 1.5 8 1.5ZM8 11C7.59 11 7.25 10.66 7.25 10.25V7.75C7.25 7.34 7.59 7 8 7C8.41 7 8.75 7.34 8.75 7.75V10.25C8.75 10.66 8.41 11 8 11ZM8.75 5.75C8.75 6.16 8.41 6.5 8 6.5C7.59 6.5 7.25 6.16 7.25 5.75C7.25 5.34 7.59 5 8 5C8.41 5 8.75 5.34 8.75 5.75Z" fill="currentColor"/>
+                    </svg>
+                    <p class="info-text">API Endpoint: localhost:8000</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
