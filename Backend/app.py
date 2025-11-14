@@ -1,147 +1,356 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.security import HTTPBearer
+from sqlalchemy.orm import Session
 from typing import List, Dict, Optional
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
-from pipeline import get_target_id, fetch_reels_paginated, get_meta_data
+import io
+import csv
+
 # Add Scripts directory to path
 scripts_dir = Path(__file__).parent / "Scripts"
 sys.path.insert(0, str(scripts_dir))
 
-app = FastAPI(title="Instagram Reel Scraper API")
+from pipeline import get_target_id, fetch_reels_paginated, get_meta_data
 
-# In-memory job storage (use Redis/database in production)
+# Import new modules
+from database import get_db, init_db
+from config import settings
+import models
+import schemas
+import crud
+from auth import get_current_user, authenticate_user, create_access_token, hash_password
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Instagram Reel Scraper API",
+    description="Multi-user Instagram reel scraping with analytics",
+    version="2.0.0"
+)
+
+# In-memory job storage (temporary, will migrate to database polling)
 jobs_db: Dict[str, dict] = {}
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOWED_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Mount static files
-static_path = Path(__file__).parent / "static"
-static_path.mkdir(exist_ok=True)
-app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+frontend_path = Path(__file__).parent.parent / "Frontend"
+if frontend_path.exists():
+    app.mount("/static", StaticFiles(directory=str(frontend_path)), name="static")
 
-class ScrapeRequest(BaseModel):
-    usernames: List[str]
-    reel_count: int = 20
 
-class ScrapeResult(BaseModel):
-    username: str
-    status: str
-    reels_scraped: int = None
-    csv_path: str = None
-    json_path: str = None
-    error: str = None
+# ==================== Startup/Shutdown Events ====================
 
-def run_scraping_job(job_id: str, usernames: List[str], reel_count: int):
-    """Background task to run the scraping job"""
-    import time as time_module
-    start_time = time_module.time()
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on startup"""
+    print("Starting Instagram Reel Scraper API...")
+    try:
+        init_db()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Database initialization failed: {e}")
+        print("API will start but database features will not work")
 
-    print(f"\n{'='*60}")
-    print(f"🚀 STARTING BACKGROUND JOB: {job_id}")
-    print(f"   Usernames: {usernames}")
-    print(f"   Reel count: {reel_count}")
-    print(f"   Time: {time_module.strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"{'='*60}\n")
 
-    results = []
-
-    for idx, username in enumerate(usernames, 1):
-        # Update job progress
-        jobs_db[job_id]['progress'] = (idx - 1) / len(usernames) * 100
-        jobs_db[job_id]['current_username'] = username
-
-        print(f"\n[{idx}/{len(usernames)}] Processing username: {username}")
-        try:
-            # Get target ID
-            target_id = get_target_id(username)
-            if not target_id:
-                result = {
-                    'username': username,
-                    'status': 'failed',
-                    'error': 'Could not find target ID'
-                }
-                results.append(result)
-                continue
-
-            # Fetch reels with pagination
-            meta_output_path = fetch_reels_paginated(
-                target_id,
-                username,
-                desired_count=reel_count,
-                sleep_seconds=3.0,
-                max_per_page=50
-            )
-
-            if meta_output_path:
-                # Extract metadata to DataFrame and save CSV
-                df_result = get_meta_data(str(meta_output_path))
-
-                result = {
-                    'username': username,
-                    'status': 'success',
-                    'reels_scraped': len(df_result),
-                    'csv_path': str(Path(meta_output_path).parent / "scrapped_data.csv"),
-                    'json_path': str(meta_output_path)
-                }
-                results.append(result)
-            else:
-                result = {
-                    'username': username,
-                    'status': 'failed',
-                    'error': 'Failed to retrieve meta data'
-                }
-                results.append(result)
-
-        except Exception as e:
-            result = {
-                'username': username,
-                'status': 'failed',
-                'error': str(e)
-            }
-            results.append(result)
-
-    elapsed_time = time_module.time() - start_time
-
-    # Update job status to completed
-    jobs_db[job_id]['status'] = 'completed'
-    jobs_db[job_id]['progress'] = 100
-    jobs_db[job_id]['results'] = results
-    jobs_db[job_id]['end_time'] = datetime.now().isoformat()
-    jobs_db[job_id]['duration'] = elapsed_time
-
-    print(f"\n{'='*60}")
-    print(f"✅ BACKGROUND JOB COMPLETED: {job_id}")
-    print(f"   Total time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-    print(f"   Successful: {sum(1 for r in results if r['status'] == 'success')}/{len(results)}")
-    print(f"   Failed: {sum(1 for r in results if r['status'] == 'failed')}/{len(results)}")
-    print(f"{'='*60}\n")
+# ==================== Root & Health Check ====================
 
 @app.get("/")
 async def read_root():
-    html_path = Path(__file__).parent / "templates" / "index.html"
-    if html_path.exists():
-        return FileResponse(html_path)
-    return {"message": "Instagram Reel Scraper API"}
+    """Serve the login page"""
+    login_path = frontend_path / "login.html"
+    if login_path.exists():
+        return FileResponse(login_path)
+    return {"message": "Instagram Reel Scraper API - Multi-User Version"}
 
-@app.post("/api/scrape")
-async def scrape_reels(request: ScrapeRequest, background_tasks: BackgroundTasks):
-    """Start a scraping job and return immediately with job_id"""
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "version": "2.0.0"}
+
+
+# ==================== Authentication Endpoints ====================
+
+@app.post("/api/auth/signup", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
+async def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    """Register a new user"""
+    # Check if email already exists
+    if crud.get_user_by_email(db, user.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+
+    # Check if username already exists
+    if crud.get_user_by_username(db, user.username):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken"
+        )
+
+    # Create user
+    db_user = crud.create_user(db, user)
+    print(f"New user registered: {db_user.email}")
+
+    return db_user
+
+
+@app.post("/api/auth/login", response_model=schemas.Token)
+async def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
+    """Login and get access token"""
+    user = authenticate_user(db, user_credentials.email, user_credentials.password)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Create access token
+    access_token = create_access_token(
+        data={"user_id": user.id, "email": user.email}
+    )
+
+    print(f"User logged in: {user.email}")
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user
+    }
+
+
+@app.get("/api/auth/me", response_model=schemas.UserResponse)
+async def get_current_user_info(current_user: models.User = Depends(get_current_user)):
+    """Get current user information"""
+    return current_user
+
+
+# ==================== User Groups Endpoints ====================
+
+@app.get("/api/groups", response_model=List[schemas.UserGroupResponse])
+async def get_groups(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all groups for current user"""
+    groups = crud.get_user_groups(db, current_user.id)
+    return groups
+
+
+@app.post("/api/groups", response_model=schemas.UserGroupResponse, status_code=status.HTTP_201_CREATED)
+async def create_group(
+    group: schemas.UserGroupCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new user group"""
+    try:
+        db_group = crud.create_group(db, current_user.id, group)
+        print(f"Group created: '{db_group.name}' by user {current_user.email}")
+        return db_group
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@app.put("/api/groups/{group_id}", response_model=schemas.UserGroupResponse)
+async def update_group(
+    group_id: int,
+    group_update: schemas.UserGroupUpdate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update a user group"""
+    try:
+        db_group = crud.update_group(db, group_id, current_user.id, group_update)
+        if not db_group:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+        print(f"Group updated: '{db_group.name}' by user {current_user.email}")
+        return db_group
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@app.delete("/api/groups/{group_id}", response_model=schemas.MessageResponse)
+async def delete_group(
+    group_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a user group"""
+    success = crud.delete_group(db, group_id, current_user.id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+
+    print(f"Group deleted: ID {group_id} by user {current_user.email}")
+    return {"message": "Group deleted successfully", "success": True}
+
+
+# ==================== Scraping Endpoints (Enhanced) ====================
+
+def run_scraping_job_with_db(
+    job_id: str,
+    user_id: int,
+    usernames: List[str],
+    reel_count: int,
+    group_id: Optional[int] = None
+):
+    """Background task to run the scraping job with database integration"""
+    import time as time_module
+    from database import SessionLocal
+
+    start_time = time_module.time()
+    db = SessionLocal()
+
+    try:
+        print(f"\n{'='*60}")
+        print(f"STARTING BACKGROUND JOB: {job_id}")
+        print(f"   User ID: {user_id}")
+        print(f"   Usernames: {usernames}")
+        print(f"   Reel count: {reel_count}")
+        print(f"   Time: {time_module.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"{'='*60}\n")
+
+        # Create job in database
+        db_job = crud.create_job(db, user_id, job_id, usernames, reel_count)
+
+        # Update group usage if from group
+        if group_id:
+            crud.update_group_usage(db, group_id, user_id)
+
+        results = []
+
+        for idx, username in enumerate(usernames, 1):
+            # Update job progress in both memory and database
+            progress = (idx - 1) / len(usernames) * 100
+            jobs_db[job_id]['progress'] = progress
+            jobs_db[job_id]['current_username'] = username
+            crud.update_job_status(db, job_id, 'running', progress=progress)
+
+            print(f"\n[{idx}/{len(usernames)}] Processing username: {username}")
+            try:
+                # Get target ID
+                target_id = get_target_id(username)
+                if not target_id:
+                    result = {
+                        'username': username,
+                        'status': 'failed',
+                        'error': 'Could not find target ID'
+                    }
+                    results.append(result)
+                    continue
+
+                # Fetch reels with pagination
+                meta_output_path = fetch_reels_paginated(
+                    target_id,
+                    username,
+                    desired_count=reel_count,
+                    sleep_seconds=3.0,
+                    max_per_page=50
+                )
+
+                if meta_output_path:
+                    # Extract metadata to DataFrame and save CSV
+                    df_result = get_meta_data(str(meta_output_path))
+
+                    # Save reels to database
+                    reels_data = []
+                    for _, row in df_result.iterrows():
+                        reel_data = {
+                            'username': username,
+                            'pk': row.get('pk', ''),
+                            'code': row.get('code', ''),
+                            'play_count': int(row.get('play_count', 0)),
+                            'comment_count': int(row.get('comment_count', 0)),
+                            'like_count': int(row.get('like_count', 0)),
+                            'url': row.get('url', '')
+                        }
+                        reels_data.append(reel_data)
+
+                    # Bulk insert reels
+                    crud.bulk_create_reels(db, user_id, job_id, reels_data)
+
+                    result = {
+                        'username': username,
+                        'status': 'success',
+                        'reels_scraped': len(df_result),
+                        'csv_path': str(Path(meta_output_path).parent / "scrapped_data.csv"),
+                        'json_path': str(meta_output_path)
+                    }
+                    results.append(result)
+                else:
+                    result = {
+                        'username': username,
+                        'status': 'failed',
+                        'error': 'Failed to retrieve meta data'
+                    }
+                    results.append(result)
+
+            except Exception as e:
+                result = {
+                    'username': username,
+                    'status': 'failed',
+                    'error': str(e)
+                }
+                results.append(result)
+
+        elapsed_time = time_module.time() - start_time
+
+        # Update job status to completed in both memory and database
+        jobs_db[job_id]['status'] = 'completed'
+        jobs_db[job_id]['progress'] = 100
+        jobs_db[job_id]['results'] = results
+        jobs_db[job_id]['end_time'] = datetime.now().isoformat()
+        jobs_db[job_id]['duration'] = elapsed_time
+
+        crud.update_job_status(db, job_id, 'completed', progress=100, duration=elapsed_time)
+
+        print(f"\n{'='*60}")
+        print(f"BACKGROUND JOB COMPLETED: {job_id}")
+        print(f"   Total time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+        print(f"   Successful: {sum(1 for r in results if r['status'] == 'success')}/{len(results)}")
+        print(f"   Failed: {sum(1 for r in results if r['status'] == 'failed')}/{len(results)}")
+        print(f"   Reels saved to database")
+        print(f"{'='*60}\n")
+
+    except Exception as e:
+        # Update job as failed
+        error_msg = str(e)
+        jobs_db[job_id]['status'] = 'failed'
+        jobs_db[job_id]['error_message'] = error_msg
+        crud.update_job_status(db, job_id, 'failed', error_message=error_msg)
+        print(f"\nJOB FAILED: {job_id} - {error_msg}\n")
+
+    finally:
+        db.close()
+
+
+@app.post("/api/scrape", response_model=schemas.JobStartResponse)
+async def scrape_reels(
+    request: schemas.ScrapeRequest,
+    background_tasks: BackgroundTasks,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Start a scraping job (requires authentication)"""
     try:
         usernames = request.usernames
         reel_count = request.reel_count
+        group_id = request.group_id
 
         if not usernames:
             raise HTTPException(status_code=400, detail="No usernames provided")
@@ -149,9 +358,10 @@ async def scrape_reels(request: ScrapeRequest, background_tasks: BackgroundTasks
         # Generate unique job ID
         job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
 
-        # Create job record
+        # Create job record in memory
         jobs_db[job_id] = {
             'job_id': job_id,
+            'user_id': current_user.id,
             'status': 'running',
             'progress': 0,
             'usernames': usernames,
@@ -163,12 +373,20 @@ async def scrape_reels(request: ScrapeRequest, background_tasks: BackgroundTasks
             'duration': None
         }
 
-        print(f"\n📥 SCRAPE REQUEST RECEIVED - Job ID: {job_id}")
+        print(f"\nSCRAPE REQUEST RECEIVED - Job ID: {job_id}")
+        print(f"   User: {current_user.email}")
         print(f"   Usernames: {usernames}")
         print(f"   Reel count: {reel_count}\n")
 
         # Start background task
-        background_tasks.add_task(run_scraping_job, job_id, usernames, reel_count)
+        background_tasks.add_task(
+            run_scraping_job_with_db,
+            job_id,
+            current_user.id,
+            usernames,
+            reel_count,
+            group_id
+        )
 
         # Return immediately with job ID
         return {
@@ -178,29 +396,131 @@ async def scrape_reels(request: ScrapeRequest, background_tasks: BackgroundTasks
         }
 
     except Exception as e:
-        print(f"\n❌ ERROR: {str(e)}\n")
+        print(f"\nERROR: {str(e)}\n")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get("/api/job/{job_id}")
-async def get_job_status(job_id: str):
-    """Get the status of a scraping job"""
+async def get_job_status(
+    job_id: str,
+    current_user: models.User = Depends(get_current_user)
+):
+    """Get the status of a scraping job (user must own the job)"""
+    print(f"\nSTATUS REQUEST for job: {job_id} by user: {current_user.email}")
+
     if job_id not in jobs_db:
+        print(f"Job {job_id} NOT FOUND in memory")
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
     job = jobs_db[job_id]
 
+    # Verify user owns this job
+    if job.get('user_id') != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to view this job")
+
+    print(f"Job found - Status: {job['status']}, Progress: {job['progress']}%")
+
+    return job
+
+
+# ==================== Analytics Endpoints ====================
+
+@app.get("/api/analytics", response_model=schemas.AnalyticsResponse)
+async def get_analytics(
+    username: Optional[str] = None,
+    min_play_count: Optional[int] = None,
+    min_like_count: Optional[int] = None,
+    min_comment_count: Optional[int] = None,
+    sort_by: str = "scraped_at",
+    sort_order: str = "desc",
+    page: int = 1,
+    per_page: int = 50,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get analytics data with filtering and pagination"""
+    reels, total = crud.get_analytics_reels(
+        db=db,
+        user_id=current_user.id,
+        username=username,
+        min_play_count=min_play_count,
+        min_like_count=min_like_count,
+        min_comment_count=min_comment_count,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        per_page=per_page
+    )
+
+    pages = (total + per_page - 1) // per_page  # Ceiling division
+
     return {
-        'job_id': job['job_id'],
-        'status': job['status'],
-        'progress': job['progress'],
-        'usernames': job['usernames'],
-        'reel_count': job['reel_count'],
-        'start_time': job['start_time'],
-        'current_username': job['current_username'],
-        'results': job['results'],
-        'end_time': job['end_time'],
-        'duration': job['duration']
+        "items": reels,
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "per_page": per_page
     }
+
+
+@app.get("/api/analytics/export")
+async def export_analytics_csv(
+    username: Optional[str] = None,
+    min_play_count: Optional[int] = None,
+    min_like_count: Optional[int] = None,
+    min_comment_count: Optional[int] = None,
+    sort_by: str = "scraped_at",
+    sort_order: str = "desc",
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Export analytics data as CSV"""
+    # Get all reels (no pagination for export)
+    reels, _ = crud.get_analytics_reels(
+        db=db,
+        user_id=current_user.id,
+        username=username,
+        min_play_count=min_play_count,
+        min_like_count=min_like_count,
+        min_comment_count=min_comment_count,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=1,
+        per_page=10000  # Get all
+    )
+
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Write header
+    writer.writerow(['Username', 'Reel Code', 'Play Count', 'Like Count', 'Comment Count', 'URL', 'Scraped At'])
+
+    # Write data
+    for reel in reels:
+        writer.writerow([
+            reel.instagram_username,
+            reel.reel_code,
+            reel.play_count,
+            reel.like_count,
+            reel.comment_count,
+            reel.reel_url,
+            reel.scraped_at.isoformat()
+        ])
+
+    # Return as streaming response
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        }
+    )
+
+
+# ==================== Server Startup ====================
 
 if __name__ == '__main__':
     import uvicorn
