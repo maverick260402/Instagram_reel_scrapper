@@ -205,23 +205,28 @@ def create_reel(db: Session, user_id: int, job_id: str, reel_data: dict) -> mode
 
 
 def bulk_create_reels(db: Session, user_id: int, job_id: str, reels_data: List[dict]):
-    """Bulk create reel records"""
-    db_reels = [
-        models.ScrapedReel(
-            job_id=job_id,
-            user_id=user_id,
-            instagram_username=reel.get('username', ''),
-            reel_pk=str(reel.get('pk', '')),
-            reel_code=reel.get('code'),
-            play_count=reel.get('play_count', 0),
-            comment_count=reel.get('comment_count', 0),
-            like_count=reel.get('like_count', 0),
-            reel_url=reel.get('url'),
-            raw_data=reel
-        )
+    """Bulk create reel records - optimized for speed"""
+    if not reels_data:
+        return
+
+    # Use bulk_insert_mappings for maximum performance (faster than bulk_save_objects)
+    mappings = [
+        {
+            'job_id': job_id,
+            'user_id': user_id,
+            'instagram_username': reel.get('username', ''),
+            'reel_pk': str(reel.get('pk', '')),
+            'reel_code': reel.get('code'),
+            'play_count': reel.get('play_count', 0),
+            'comment_count': reel.get('comment_count', 0),
+            'like_count': reel.get('like_count', 0),
+            'reel_url': reel.get('url'),
+            'raw_data': reel,
+            'scraped_at': datetime.utcnow()
+        }
         for reel in reels_data
     ]
-    db.bulk_save_objects(db_reels)
+    db.bulk_insert_mappings(models.ScrapedReel, mappings)
     db.commit()
 
 
@@ -229,6 +234,7 @@ def get_analytics_reels(
     db: Session,
     user_id: int,
     username: Optional[str] = None,
+    group_id: Optional[int] = None,
     min_play_count: Optional[int] = None,
     min_like_count: Optional[int] = None,
     min_comment_count: Optional[int] = None,
@@ -239,13 +245,31 @@ def get_analytics_reels(
 ) -> tuple[List[models.ScrapedReel], int]:
     """
     Get reels for analytics with filtering and pagination
+    Supports filtering by multiple usernames (comma-separated) and user groups
     Returns (reels, total_count)
     """
     query = db.query(models.ScrapedReel).filter(models.ScrapedReel.user_id == user_id)
 
     # Apply filters
     if username:
-        query = query.filter(models.ScrapedReel.instagram_username.ilike(f"%{username}%"))
+        # Support multiple usernames separated by commas
+        usernames_list = [u.strip() for u in username.split(',') if u.strip()]
+        if len(usernames_list) == 1:
+            # Single username - use ILIKE for partial match
+            query = query.filter(models.ScrapedReel.instagram_username.ilike(f"%{usernames_list[0]}%"))
+        elif len(usernames_list) > 1:
+            # Multiple usernames - exact match for each
+            query = query.filter(models.ScrapedReel.instagram_username.in_(usernames_list))
+
+    # Filter by group - get usernames from the group
+    if group_id:
+        group = db.query(models.UserGroup).filter(
+            models.UserGroup.id == group_id,
+            models.UserGroup.user_id == user_id
+        ).first()
+        if group and group.usernames:
+            query = query.filter(models.ScrapedReel.instagram_username.in_(group.usernames))
+
     if min_play_count is not None:
         query = query.filter(models.ScrapedReel.play_count >= min_play_count)
     if min_like_count is not None:
@@ -268,3 +292,13 @@ def get_analytics_reels(
     reels = query.offset(offset).limit(per_page).all()
 
     return reels, total
+
+
+def get_unique_usernames(db: Session, user_id: int) -> List[str]:
+    """Get list of unique Instagram usernames that the user has scraped"""
+    result = db.query(models.ScrapedReel.instagram_username)\
+        .filter(models.ScrapedReel.user_id == user_id)\
+        .distinct()\
+        .order_by(models.ScrapedReel.instagram_username)\
+        .all()
+    return [row[0] for row in result if row[0]]

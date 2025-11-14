@@ -216,14 +216,28 @@
                         </div>
                         <div class="card-body">
                             <div class="filters-grid">
-                                <div class="filter-item">
-                                    <label for="filterUsername" class="filter-label">Username</label>
+                                <div class="filter-item" style="position: relative;">
+                                    <label for="filterUsername" class="filter-label">Username(s)</label>
                                     <input
                                         type="text"
                                         id="filterUsername"
-                                        placeholder="Filter by username"
+                                        placeholder="username1, username2 or partial name"
                                         class="input-field"
+                                        autocomplete="off"
                                     />
+                                    <div id="usernameSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                                        Separate multiple usernames with commas
+                                    </small>
+                                </div>
+                                <div class="filter-item">
+                                    <label for="filterGroup" class="filter-label">User Group</label>
+                                    <select id="filterGroup" class="input-field">
+                                        <option value="">-- Select Group --</option>
+                                    </select>
+                                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                                        Filter by saved group
+                                    </small>
                                 </div>
                                 <div class="filter-item">
                                     <label for="filterMinPlays" class="filter-label">Min. Play Count</label>

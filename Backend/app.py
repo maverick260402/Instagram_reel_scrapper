@@ -216,6 +216,9 @@ def run_scraping_job_with_db(
     start_time = time_module.time()
     db = SessionLocal()
 
+    # Disable autoflush for better performance during bulk operations
+    db.autoflush = False
+
     try:
         print(f"\n{'='*60}")
         print(f"STARTING BACKGROUND JOB: {job_id}")
@@ -235,11 +238,14 @@ def run_scraping_job_with_db(
         results = []
 
         for idx, username in enumerate(usernames, 1):
-            # Update job progress in both memory and database
+            # Update job progress in memory only (faster, no DB write)
             progress = (idx - 1) / len(usernames) * 100
             jobs_db[job_id]['progress'] = progress
             jobs_db[job_id]['current_username'] = username
-            crud.update_job_status(db, job_id, 'running', progress=progress)
+
+            # Only update database every 5 usernames or on first/last to reduce DB writes
+            if idx == 1 or idx == len(usernames) or idx % 5 == 0:
+                crud.update_job_status(db, job_id, 'running', progress=progress)
 
             print(f"\n[{idx}/{len(usernames)}] Processing username: {username}")
             try:
@@ -267,19 +273,16 @@ def run_scraping_job_with_db(
                     # Extract metadata to DataFrame and save CSV
                     df_result = get_meta_data(str(meta_output_path))
 
-                    # Save reels to database
-                    reels_data = []
-                    for _, row in df_result.iterrows():
-                        reel_data = {
-                            'username': username,
-                            'pk': row.get('pk', ''),
-                            'code': row.get('code', ''),
-                            'play_count': int(row.get('play_count', 0)),
-                            'comment_count': int(row.get('comment_count', 0)),
-                            'like_count': int(row.get('like_count', 0)),
-                            'url': row.get('url', '')
-                        }
-                        reels_data.append(reel_data)
+                    # Save reels to database - use vectorized operations (much faster than iterrows)
+                    reels_data = df_result.to_dict('records')
+                    # Add username to each record
+                    for reel in reels_data:
+                        reel['username'] = username
+                        # Ensure numeric fields are integers
+                        reel['pk'] = str(reel.get('pk', ''))
+                        reel['play_count'] = int(reel.get('play_count', 0))
+                        reel['comment_count'] = int(reel.get('comment_count', 0))
+                        reel['like_count'] = int(reel.get('like_count', 0))
 
                     # Bulk insert reels
                     crud.bulk_create_reels(db, user_id, job_id, reels_data)
@@ -428,6 +431,7 @@ async def get_job_status(
 @app.get("/api/analytics", response_model=schemas.AnalyticsResponse)
 async def get_analytics(
     username: Optional[str] = None,
+    group_id: Optional[int] = None,
     min_play_count: Optional[int] = None,
     min_like_count: Optional[int] = None,
     min_comment_count: Optional[int] = None,
@@ -438,11 +442,12 @@ async def get_analytics(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get analytics data with filtering and pagination"""
+    """Get analytics data with filtering and pagination - supports multiple usernames and group filtering"""
     reels, total = crud.get_analytics_reels(
         db=db,
         user_id=current_user.id,
         username=username,
+        group_id=group_id,
         min_play_count=min_play_count,
         min_like_count=min_like_count,
         min_comment_count=min_comment_count,
@@ -463,9 +468,20 @@ async def get_analytics(
     }
 
 
+@app.get("/api/analytics/usernames")
+async def get_unique_usernames(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get list of unique usernames that the user has scraped"""
+    usernames = crud.get_unique_usernames(db, current_user.id)
+    return {"usernames": usernames}
+
+
 @app.get("/api/analytics/export")
 async def export_analytics_csv(
     username: Optional[str] = None,
+    group_id: Optional[int] = None,
     min_play_count: Optional[int] = None,
     min_like_count: Optional[int] = None,
     min_comment_count: Optional[int] = None,
@@ -480,6 +496,7 @@ async def export_analytics_csv(
         db=db,
         user_id=current_user.id,
         username=username,
+        group_id=group_id,
         min_play_count=min_play_count,
         min_like_count=min_like_count,
         min_comment_count=min_comment_count,
