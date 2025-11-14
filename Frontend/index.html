@@ -37,6 +37,13 @@
                     </svg>
                     <span class="nav-text">Job Tracker</span>
                 </a>
+
+                <a href="#" class="nav-item" data-page="analytics">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 17V7M10 17V3M17 17V11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="nav-text">Analytics</span>
+                </a>
             </nav>
         </aside>
 
@@ -44,8 +51,14 @@
         <div class="main-container">
             <header class="top-header">
                 <div class="header-content">
-                    <h1 class="app-title">Instagram Reel Scraper</h1>
-                    <p class="app-subtitle">Scrape Instagram reels data effortlessly</p>
+                    <div>
+                        <h1 class="app-title">Instagram Reel Scraper</h1>
+                        <p class="app-subtitle">Scrape Instagram reels data effortlessly</p>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="userName">Loading...</span>
+                        <button id="logoutBtn" class="btn btn-text">Logout</button>
+                    </div>
                 </div>
             </header>
 
@@ -66,6 +79,24 @@
                                 class="input-field"
                             />
                             <button id="addUsernameBtn" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- User Groups Section -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">User Groups</h2>
+                        <button id="newGroupBtn" class="btn btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: middle; margin-right: 0.25rem;">
+                                <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            New Group
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="groups-grid" id="groupsList">
+                            <div class="empty-state">No groups yet. Create your first group to save username collections.</div>
                         </div>
                     </div>
                 </section>
@@ -141,16 +172,6 @@
                         </div>
                     </div>
                 </section>
-
-                <!-- Results Section -->
-                <section class="card" id="resultsSection" style="display: none;">
-                    <div class="card-header">
-                        <h3 class="card-title">Scraping Results</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="results-list" id="resultsContainer"></div>
-                    </div>
-                </section>
                 </div>
             </div>
 
@@ -173,6 +194,121 @@
                         <div class="card-body">
                             <div class="jobs-list" id="jobsList">
                                 <div class="empty-state">No jobs yet. Start scraping to see job history.</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div class="page-content" id="analytics-page" style="display: none;">
+                <div class="content-wrapper">
+                    <!-- Analytics Filters -->
+                    <section class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Analytics Dashboard</h2>
+                            <button id="exportCsvBtn" class="btn btn-primary">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: middle; margin-right: 0.25rem;">
+                                    <path d="M8 11L3 6H6V2H10V6H13L8 11ZM2 13H14V15H2V13Z" fill="currentColor"/>
+                                </svg>
+                                Export CSV
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="filters-grid">
+                                <div class="filter-item">
+                                    <label for="filterUsername" class="filter-label">Username</label>
+                                    <input
+                                        type="text"
+                                        id="filterUsername"
+                                        placeholder="Filter by username"
+                                        class="input-field"
+                                    />
+                                </div>
+                                <div class="filter-item">
+                                    <label for="filterMinPlays" class="filter-label">Min. Play Count</label>
+                                    <input
+                                        type="number"
+                                        id="filterMinPlays"
+                                        placeholder="Minimum plays"
+                                        class="input-field"
+                                        min="0"
+                                    />
+                                </div>
+                                <div class="filter-item">
+                                    <label for="filterMinLikes" class="filter-label">Min. Like Count</label>
+                                    <input
+                                        type="number"
+                                        id="filterMinLikes"
+                                        placeholder="Minimum likes"
+                                        class="input-field"
+                                        min="0"
+                                    />
+                                </div>
+                                <div class="filter-item">
+                                    <label for="filterMinComments" class="filter-label">Min. Comment Count</label>
+                                    <input
+                                        type="number"
+                                        id="filterMinComments"
+                                        placeholder="Minimum comments"
+                                        class="input-field"
+                                        min="0"
+                                    />
+                                </div>
+                                <div class="filter-item">
+                                    <label for="sortBy" class="filter-label">Sort By</label>
+                                    <select id="sortBy" class="input-field">
+                                        <option value="scraped_at">Date Scraped</option>
+                                        <option value="play_count">Play Count</option>
+                                        <option value="like_count">Like Count</option>
+                                        <option value="comment_count">Comment Count</option>
+                                    </select>
+                                </div>
+                                <div class="filter-item">
+                                    <label for="sortOrder" class="filter-label">Sort Order</label>
+                                    <select id="sortOrder" class="input-field">
+                                        <option value="desc">Descending</option>
+                                        <option value="asc">Ascending</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button id="applyFiltersBtn" class="btn btn-primary" style="margin-top: 1rem;">Apply Filters</button>
+                        </div>
+                    </section>
+
+                    <!-- Analytics Table -->
+                    <section class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Scraped Reels</h3>
+                            <div class="analytics-stats">
+                                <span class="stat-badge">Total: <strong id="totalReels">0</strong></span>
+                                <span class="stat-badge">Page <strong id="currentPage">1</strong> of <strong id="totalPages">1</strong></span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="analytics-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Username</th>
+                                            <th>Reel Code</th>
+                                            <th class="text-right">Play Count</th>
+                                            <th class="text-right">Like Count</th>
+                                            <th class="text-right">Comment Count</th>
+                                            <th>URL</th>
+                                            <th>Date Scraped</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="analyticsTableBody">
+                                        <tr>
+                                            <td colspan="7" class="empty-state">No data yet. Start scraping to see analytics.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="pagination" id="paginationControls" style="display: none;">
+                                <button id="prevPageBtn" class="btn btn-text" disabled>Previous</button>
+                                <button id="nextPageBtn" class="btn btn-text" disabled>Next</button>
                             </div>
                         </div>
                     </section>
@@ -217,6 +353,48 @@
         </aside>
     </div>
 
+    <!-- Group Modal -->
+    <div id="groupModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Create New Group</h3>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="groupForm">
+                    <div class="form-group">
+                        <label for="groupName" class="form-label">Group Name</label>
+                        <input
+                            type="text"
+                            id="groupName"
+                            class="input-field"
+                            placeholder="Enter group name"
+                            required
+                            maxlength="100"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="groupUsernames" class="form-label">Usernames (one per line)</label>
+                        <textarea
+                            id="groupUsernames"
+                            class="textarea-field"
+                            placeholder="username1&#10;username2&#10;username3"
+                            rows="8"
+                            required
+                        ></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-text" id="cancelGroupBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="saveGroupBtn">Save Group</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="groups.js"></script>
+    <script src="analytics.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
