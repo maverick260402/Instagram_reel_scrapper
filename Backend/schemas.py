@@ -128,6 +128,7 @@ class ScrapedReelResponse(BaseModel):
     play_count: int
     comment_count: int
     like_count: int
+    engagement_ratio: float
     reel_url: Optional[str]
     scraped_at: datetime
 
@@ -140,7 +141,8 @@ class AnalyticsFilters(BaseModel):
     min_play_count: Optional[int] = Field(None, ge=0)
     min_like_count: Optional[int] = Field(None, ge=0)
     min_comment_count: Optional[int] = Field(None, ge=0)
-    sort_by: str = Field(default="scraped_at", pattern="^(play_count|like_count|comment_count|scraped_at)$")
+    min_engagement_ratio: Optional[float] = Field(None, ge=0.0)
+    sort_by: str = Field(default="scraped_at", pattern="^(play_count|like_count|comment_count|scraped_at|engagement_ratio)$")
     sort_order: str = Field(default="desc", pattern="^(asc|desc)$")
     page: int = Field(default=1, ge=1)
     per_page: int = Field(default=50, ge=1, le=200)

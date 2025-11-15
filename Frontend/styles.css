@@ -1131,49 +1131,6 @@ body {
     padding: 1.5rem 0 0.5rem;
 }
 
-/* ==================== Autocomplete Suggestions ==================== */
-
-.autocomplete-suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 0;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 1000;
-    margin-top: 0.25rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-.suggestion-item {
-    padding: 0.75rem 1rem;
-    cursor: pointer;
-    font-size: 0.875rem;
-    color: var(--text-primary);
-    transition: background-color 0.15s ease;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.suggestion-item:last-child {
-    border-bottom: none;
-}
-
-.suggestion-item:hover {
-    background-color: var(--bg-hover);
-}
-
-.suggestion-item.selected {
-    background-color: var(--accent-purple);
-}
-
-.suggestion-highlight {
-    font-weight: 600;
-    color: var(--accent-purple-hover);
-}
-
 /* ==================== Select Field Styles ==================== */
 
 select.input-field {
@@ -1197,7 +1154,7 @@ select.input-field:focus {
     width: 14px;
     height: 14px;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 0;
+    border-radius: 50%;
     border-top-color: #fff;
     animation: spin 0.6s linear infinite;
     margin-left: 0.5rem;

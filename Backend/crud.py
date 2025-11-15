@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, asc
+from sqlalchemy import func, desc, asc, cast, Numeric
 from typing import List, Optional
 from datetime import datetime
 import models
@@ -238,6 +238,7 @@ def get_analytics_reels(
     min_play_count: Optional[int] = None,
     min_like_count: Optional[int] = None,
     min_comment_count: Optional[int] = None,
+    min_engagement_ratio: Optional[float] = None,
     sort_by: str = "scraped_at",
     sort_order: str = "desc",
     page: int = 1,
@@ -277,19 +278,40 @@ def get_analytics_reels(
     if min_comment_count is not None:
         query = query.filter(models.ScrapedReel.comment_count >= min_comment_count)
 
+    # Filter by engagement ratio (calculated as (likes + comments) / plays)
+    if min_engagement_ratio is not None:
+        # Only include reels with play_count > 0 to avoid division by zero
+        engagement_expr = cast(models.ScrapedReel.like_count + models.ScrapedReel.comment_count, Numeric) / func.nullif(models.ScrapedReel.play_count, 0)
+        query = query.filter(engagement_expr >= min_engagement_ratio)
+
     # Get total count before pagination
     total = query.count()
 
     # Apply sorting
-    sort_column = getattr(models.ScrapedReel, sort_by, models.ScrapedReel.scraped_at)
-    if sort_order == "desc":
-        query = query.order_by(desc(sort_column))
+    if sort_by == "engagement_ratio":
+        # Sort by computed engagement ratio
+        engagement_expr = cast(models.ScrapedReel.like_count + models.ScrapedReel.comment_count, Numeric) / func.nullif(models.ScrapedReel.play_count, 0)
+        if sort_order == "desc":
+            query = query.order_by(desc(engagement_expr))
+        else:
+            query = query.order_by(asc(engagement_expr))
     else:
-        query = query.order_by(asc(sort_column))
+        sort_column = getattr(models.ScrapedReel, sort_by, models.ScrapedReel.scraped_at)
+        if sort_order == "desc":
+            query = query.order_by(desc(sort_column))
+        else:
+            query = query.order_by(asc(sort_column))
 
     # Apply pagination
     offset = (page - 1) * per_page
     reels = query.offset(offset).limit(per_page).all()
+
+    # Add engagement_ratio as a computed attribute to each reel
+    for reel in reels:
+        if reel.play_count > 0:
+            reel.engagement_ratio = round((reel.like_count + reel.comment_count) / reel.play_count, 4)
+        else:
+            reel.engagement_ratio = 0.0
 
     return reels, total
 

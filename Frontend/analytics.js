@@ -9,6 +9,7 @@ const filterGroup = document.getElementById('filterGroup');
 const filterMinPlays = document.getElementById('filterMinPlays');
 const filterMinLikes = document.getElementById('filterMinLikes');
 const filterMinComments = document.getElementById('filterMinComments');
+const filterMinEngagement = document.getElementById('filterMinEngagement');
 const sortBy = document.getElementById('sortBy');
 const sortOrder = document.getElementById('sortOrder');
 const applyFiltersBtn = document.getElementById('applyFiltersBtn');
@@ -59,6 +60,9 @@ async function fetchAnalytics(page = 1, filters = {}) {
         }
         if (filters.min_comment_count) {
             params.append('min_comment_count', filters.min_comment_count);
+        }
+        if (filters.min_engagement_ratio) {
+            params.append('min_engagement_ratio', filters.min_engagement_ratio);
         }
         if (filters.sort_by) {
             params.append('sort_by', filters.sort_by);
@@ -183,6 +187,9 @@ async function exportAnalyticsCsv() {
         if (currentFilters.min_comment_count) {
             params.append('min_comment_count', currentFilters.min_comment_count);
         }
+        if (currentFilters.min_engagement_ratio) {
+            params.append('min_engagement_ratio', currentFilters.min_engagement_ratio);
+        }
         if (currentFilters.sort_by) {
             params.append('sort_by', currentFilters.sort_by);
         }
@@ -245,10 +252,10 @@ function displayAnalytics(data) {
     analyticsTableBody.innerHTML = data.items.map(reel => `
         <tr>
             <td class="username-cell">${escapeHtml(reel.instagram_username)}</td>
-            <td class="code-cell"><code>${escapeHtml(reel.reel_code || 'N/A')}</code></td>
             <td class="text-right number-cell">${formatNumber(reel.play_count)}</td>
             <td class="text-right number-cell">${formatNumber(reel.like_count)}</td>
             <td class="text-right number-cell">${formatNumber(reel.comment_count)}</td>
+            <td class="text-right number-cell">${formatEngagementRatio(reel.engagement_ratio)}</td>
             <td class="url-cell">
                 ${reel.reel_url ? `<a href="${escapeHtml(reel.reel_url)}" target="_blank" class="reel-link">View Reel</a>` : 'N/A'}
             </td>
@@ -269,6 +276,11 @@ function displayAnalytics(data) {
 function formatNumber(num) {
     if (num === null || num === undefined) return '0';
     return num.toLocaleString();
+}
+
+function formatEngagementRatio(ratio) {
+    if (ratio === null || ratio === undefined) return '0.0000';
+    return ratio.toFixed(4);
 }
 
 function formatDate(dateString) {
@@ -453,6 +465,7 @@ applyFiltersBtn.addEventListener('click', async () => {
     const minPlays = parseInt(filterMinPlays.value);
     const minLikes = parseInt(filterMinLikes.value);
     const minComments = parseInt(filterMinComments.value);
+    const minEngagement = parseFloat(filterMinEngagement.value);
     const sortByValue = sortBy.value;
     const sortOrderValue = sortOrder.value;
 
@@ -461,6 +474,7 @@ applyFiltersBtn.addEventListener('click', async () => {
     if (!isNaN(minPlays) && minPlays > 0) currentFilters.min_play_count = minPlays;
     if (!isNaN(minLikes) && minLikes > 0) currentFilters.min_like_count = minLikes;
     if (!isNaN(minComments) && minComments > 0) currentFilters.min_comment_count = minComments;
+    if (!isNaN(minEngagement) && minEngagement > 0) currentFilters.min_engagement_ratio = minEngagement;
     if (sortByValue) currentFilters.sort_by = sortByValue;
     if (sortOrderValue) currentFilters.sort_order = sortOrderValue;
 
@@ -498,7 +512,7 @@ nextPageBtn.addEventListener('click', async () => {
 });
 
 // Also allow pressing Enter in filter fields to apply filters
-[filterUsername, filterMinPlays, filterMinLikes, filterMinComments].forEach(input => {
+[filterUsername, filterMinPlays, filterMinLikes, filterMinComments, filterMinEngagement].forEach(input => {
     input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             applyFiltersBtn.click();

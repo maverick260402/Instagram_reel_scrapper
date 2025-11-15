@@ -435,6 +435,7 @@ async def get_analytics(
     min_play_count: Optional[int] = None,
     min_like_count: Optional[int] = None,
     min_comment_count: Optional[int] = None,
+    min_engagement_ratio: Optional[float] = None,
     sort_by: str = "scraped_at",
     sort_order: str = "desc",
     page: int = 1,
@@ -451,6 +452,7 @@ async def get_analytics(
         min_play_count=min_play_count,
         min_like_count=min_like_count,
         min_comment_count=min_comment_count,
+        min_engagement_ratio=min_engagement_ratio,
         sort_by=sort_by,
         sort_order=sort_order,
         page=page,
@@ -485,6 +487,7 @@ async def export_analytics_csv(
     min_play_count: Optional[int] = None,
     min_like_count: Optional[int] = None,
     min_comment_count: Optional[int] = None,
+    min_engagement_ratio: Optional[float] = None,
     sort_by: str = "scraped_at",
     sort_order: str = "desc",
     current_user: models.User = Depends(get_current_user),
@@ -500,6 +503,7 @@ async def export_analytics_csv(
         min_play_count=min_play_count,
         min_like_count=min_like_count,
         min_comment_count=min_comment_count,
+        min_engagement_ratio=min_engagement_ratio,
         sort_by=sort_by,
         sort_order=sort_order,
         page=1,
@@ -511,16 +515,16 @@ async def export_analytics_csv(
     writer = csv.writer(output)
 
     # Write header
-    writer.writerow(['Username', 'Reel Code', 'Play Count', 'Like Count', 'Comment Count', 'URL', 'Scraped At'])
+    writer.writerow(['Username', 'Play Count', 'Like Count', 'Comment Count', 'Engagement Ratio', 'URL', 'Scraped At'])
 
     # Write data
     for reel in reels:
         writer.writerow([
             reel.instagram_username,
-            reel.reel_code,
             reel.play_count,
             reel.like_count,
             reel.comment_count,
+            reel.engagement_ratio,
             reel.reel_url,
             reel.scraped_at.isoformat()
         ])
