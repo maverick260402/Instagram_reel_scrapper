@@ -83,7 +83,7 @@ class UserGroupResponse(UserGroupBase):
 # ==================== Scraping Job Schemas ====================
 
 class ScrapeRequest(BaseModel):
-    usernames: List[str] = Field(..., min_items=1, max_items=50)
+    usernames: List[str] = Field(..., min_items=1, max_items=500)
     reel_count: int = Field(default=20, ge=1, le=100)
     group_id: Optional[int] = None  # If scraping from a saved group
 
