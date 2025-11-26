@@ -548,8 +548,8 @@ if __name__ == '__main__':
     # Configure uvicorn with longer timeout for long-running scraping requests
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=8000,
+        host="127.0.0.1",  # Changed from 0.0.0.0 to avoid Windows firewall issues
+        port=8080,  # Changed to 8080 to avoid Windows reserved port range (1-5000)
         timeout_keep_alive=600,  # 10 minutes keepalive timeout
         timeout_graceful_shutdown=30
     )

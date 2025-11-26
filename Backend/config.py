@@ -6,10 +6,10 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
 
     # Database
-    DATABASE_URL: str = "postgresql://scraper_user:password@localhost:5432/instagram_scraper"
-
+    DATABASE_URL: Optional[str] = None
+    
     # JWT Authentication
-    SECRET_KEY: str = "your-secret-key-change-in-production-use-openssl-rand-hex-32"
+    SECRET_KEY: str 
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
 

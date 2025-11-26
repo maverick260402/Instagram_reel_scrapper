@@ -87,6 +87,7 @@ class ScrapedReel(Base):
     play_count = Column(BigInteger, default=0, nullable=False)
     comment_count = Column(Integer, default=0, nullable=False)
     like_count = Column(BigInteger, default=0, nullable=False)
+    is_reel_pinned = Column(String(3), nullable=True)  # "Yes" or "No"
     reel_url = Column(Text, nullable=True)
     scraped_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     raw_data = Column(JSONB, nullable=True)  # Store full Instagram API response

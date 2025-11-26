@@ -726,7 +726,7 @@ async function handleScrape() {
         let errorMessage = error.message || 'Unknown error';
 
         if (error.message === 'Failed to fetch') {
-            errorMessage = 'Network error. Please check if the backend server is running on localhost:8000';
+            errorMessage = 'Network error. Please check if the backend server is running on localhost:8080';
         }
 
         showNotification(`Error: ${errorMessage}`, 'error');

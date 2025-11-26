@@ -231,7 +231,7 @@ async function exportAnalyticsCsv() {
 
 function displayAnalytics(data) {
     if (!data || !data.items || data.items.length === 0) {
-        analyticsTableBody.innerHTML = '<tr><td colspan="7" class="empty-state">No data yet. Start scraping to see analytics.</td></tr>';
+        analyticsTableBody.innerHTML = '<tr><td colspan="8" class="empty-state">No data yet. Start scraping to see analytics.</td></tr>';
         paginationControls.style.display = 'none';
         totalReelsSpan.textContent = '0';
         currentPageSpan.textContent = '1';
@@ -256,6 +256,9 @@ function displayAnalytics(data) {
             <td class="text-right number-cell">${formatNumber(reel.like_count)}</td>
             <td class="text-right number-cell">${formatNumber(reel.comment_count)}</td>
             <td class="text-right number-cell">${formatEngagementRatio(reel.engagement_ratio)}</td>
+            <td class="text-center pinned-cell">
+                ${formatPinnedStatus(reel.is_reel_pinned)}
+            </td>
             <td class="url-cell">
                 ${reel.reel_url ? `<a href="${escapeHtml(reel.reel_url)}" target="_blank" class="reel-link">View Reel</a>` : 'N/A'}
             </td>
@@ -281,6 +284,19 @@ function formatNumber(num) {
 function formatEngagementRatio(ratio) {
     if (ratio === null || ratio === undefined) return '0.0000';
     return ratio.toFixed(4);
+}
+
+function formatPinnedStatus(isPinned) {
+    if (!isPinned) return '<span class="pinned-badge pinned-no">No</span>';
+
+    // Handle both "Yes"/"No" strings and boolean values
+    const pinnedValue = (typeof isPinned === 'string') ? isPinned.toLowerCase() : (isPinned ? 'yes' : 'no');
+
+    if (pinnedValue === 'yes' || pinnedValue === 'true' || pinnedValue === true) {
+        return '<span class="pinned-badge pinned-yes">Yes</span>';
+    } else {
+        return '<span class="pinned-badge pinned-no">No</span>';
+    }
 }
 
 function formatDate(dateString) {

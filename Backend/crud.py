@@ -195,6 +195,7 @@ def create_reel(db: Session, user_id: int, job_id: str, reel_data: dict) -> mode
         play_count=reel_data.get('play_count', 0),
         comment_count=reel_data.get('comment_count', 0),
         like_count=reel_data.get('like_count', 0),
+        is_reel_pinned=reel_data.get('is_reel_pinned', 'No'),
         reel_url=reel_data.get('url'),
         raw_data=reel_data
     )
@@ -220,6 +221,7 @@ def bulk_create_reels(db: Session, user_id: int, job_id: str, reels_data: List[d
             'play_count': reel.get('play_count', 0),
             'comment_count': reel.get('comment_count', 0),
             'like_count': reel.get('like_count', 0),
+            'is_reel_pinned': reel.get('is_reel_pinned', 'No'),
             'reel_url': reel.get('url'),
             'raw_data': reel,
             'scraped_at': datetime.utcnow()

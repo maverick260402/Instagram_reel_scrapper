@@ -1066,6 +1066,10 @@ body {
     text-align: right;
 }
 
+.analytics-table th.text-center {
+    text-align: center;
+}
+
 .analytics-table tbody tr {
     border-bottom: 1px solid var(--border-color);
     transition: background-color 0.15s ease;
@@ -1082,6 +1086,10 @@ body {
 
 .analytics-table td.text-right {
     text-align: right;
+}
+
+.analytics-table td.text-center {
+    text-align: center;
 }
 
 .analytics-table td.empty-state {
@@ -1122,6 +1130,32 @@ body {
 .date-cell {
     font-size: 0.8125rem;
     color: var(--text-muted);
+}
+
+.pinned-cell {
+    text-align: center;
+}
+
+.pinned-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.pinned-badge.pinned-yes {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pinned-badge.pinned-no {
+    background-color: rgba(107, 114, 128, 0.1);
+    color: var(--text-muted);
+    border: 1px solid rgba(107, 114, 128, 0.3);
 }
 
 .pagination {

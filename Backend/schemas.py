@@ -129,6 +129,7 @@ class ScrapedReelResponse(BaseModel):
     comment_count: int
     like_count: int
     engagement_ratio: float
+    is_reel_pinned: Optional[str] = None
     reel_url: Optional[str]
     scraped_at: datetime
 
