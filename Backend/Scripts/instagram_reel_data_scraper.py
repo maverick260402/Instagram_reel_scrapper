@@ -13,7 +13,7 @@ headers = {
     "accept": "*/*",
     "accept-encoding": "gzip, deflate, br, zstd",  # zstd included
     "accept-language": "en-US,en;q=0.9,hi;q=0.8",
-    "cookie": "ds_user_id=5601622418; ig_did=4988F2DA-8B83-45E2-8E76-10084387020A; datr=S2t1Z7XeQZ1TOKsC6Y2n95gA; mid=Z7d2dgALAAFIblJQ3QxY0lbIABHe; csrftoken=rtEaRSsAYdcaCYRdhNEQP_; ps_l=1; ps_n=1; dpr=1.25; sessionid=5601622418%3A1jBGSd4Ae917hD%3A13%3AAYi59q2LfrcCLMWKemI_1pFSFRhcog8ztRwTvtJi6mdT; wd=967x730; rur=\"RVA\\0545601622418\\0541794059836:01fe94ceb9c6168da517b5ea372c1593e2c32fe2ccfb6b494dae90537dd7c6b39ec98156\"",
+    "cookie": "ds_user_id=5601622418; ; rur=\"RVA\\0545601622418\\0541794059836:01fe94ceb9c6168da517b5ea372c1593e2c32fe2ccfb6b494dae90537dd7c6b39ec98156\"",
     "referer": "https://www.instagram.com/reel/DKzb0p2oy3F/",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
     "x-asbd-id": "359341",
