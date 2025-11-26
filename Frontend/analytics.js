@@ -282,8 +282,8 @@ function formatNumber(num) {
 }
 
 function formatEngagementRatio(ratio) {
-    if (ratio === null || ratio === undefined) return '0.0000';
-    return ratio.toFixed(4);
+    if (ratio === null || ratio === undefined) return '0.00';
+    return (ratio * 100).toFixed(2);
 }
 
 function formatPinnedStatus(isPinned) {
