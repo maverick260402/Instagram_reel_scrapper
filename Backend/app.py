@@ -16,7 +16,14 @@ import csv
 scripts_dir = Path(__file__).parent / "Scripts"
 sys.path.insert(0, str(scripts_dir))
 
-from pipeline import get_target_id, fetch_reels_paginated, get_meta_data
+# Import new cookie-based pipeline
+from pipeline_with_cookie_extraction import (
+    get_target_id_with_cookie,
+    fetch_reels_paginated_with_cookie,
+    extract_metadata_to_csv,
+    CookieManager,
+    extract_cookie_value
+)
 
 # Import new modules
 from database import get_db, init_db
@@ -35,6 +42,15 @@ app = FastAPI(
 
 # In-memory job storage (temporary, will migrate to database polling)
 jobs_db: Dict[str, dict] = {}
+
+# ==================== Instagram Cookie Configuration ====================
+# Instagram credentials for cookie extraction
+# TODO: Move these to environment variables for production
+INSTAGRAM_EMAIL = "jigglyphilcam@gmail.com"  # Set your Instagram email
+INSTAGRAM_PASSWORD = "Maverick15#"  # Set your Instagram password
+
+# Initialize global cookie manager
+cookie_manager = CookieManager(INSTAGRAM_EMAIL, INSTAGRAM_PASSWORD)
 
 # CORS middleware
 app.add_middleware(
@@ -228,6 +244,11 @@ def run_scraping_job_with_db(
         print(f"   Time: {time_module.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'='*60}\n")
 
+        # Get Instagram cookies (uses cached or extracts fresh)
+        print("🔑 Getting Instagram cookies...")
+        cookie_string = cookie_manager.get_cookie()
+        print("✔ Cookies ready\n")
+
         # Create job in database
         db_job = crud.create_job(db, user_id, job_id, usernames, reel_count)
 
@@ -249,8 +270,8 @@ def run_scraping_job_with_db(
 
             print(f"\n[{idx}/{len(usernames)}] Processing username: {username}")
             try:
-                # Get target ID
-                target_id = get_target_id(username)
+                # Get target ID with cookie
+                target_id = get_target_id_with_cookie(username, cookie_string)
                 if not target_id:
                     result = {
                         'username': username,
@@ -260,10 +281,11 @@ def run_scraping_job_with_db(
                     results.append(result)
                     continue
 
-                # Fetch reels with pagination
-                meta_output_path = fetch_reels_paginated(
+                # Fetch reels with pagination using cookie
+                meta_output_path = fetch_reels_paginated_with_cookie(
                     target_id,
                     username,
+                    cookie_string,
                     desired_count=reel_count,
                     sleep_seconds=3.0,
                     max_per_page=50
@@ -271,7 +293,7 @@ def run_scraping_job_with_db(
 
                 if meta_output_path:
                     # Extract metadata to DataFrame and save CSV
-                    df_result = get_meta_data(str(meta_output_path))
+                    df_result = extract_metadata_to_csv(str(meta_output_path))
 
                     # Save reels to database - use vectorized operations (much faster than iterrows)
                     reels_data = df_result.to_dict('records')
