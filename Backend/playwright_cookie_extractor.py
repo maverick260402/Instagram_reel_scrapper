@@ -2,17 +2,18 @@ from playwright.sync_api import sync_playwright
 import json
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def extract_instagram_cookie(email: str, password: str, force_refresh: bool = False) -> str:
     """
     Extract Instagram cookies using Playwright login.
+    Automatically reuses existing cookies if they are less than 5 days old.
 
     Args:
         email: Instagram email/username
         password: Instagram password
-        force_refresh: If True, regenerate cookie even if today's file exists
+        force_refresh: If True, regenerate cookie even if valid cookie exists
 
     Returns:
         Cookie string formatted as: name=value; name=value; ...
@@ -22,17 +23,41 @@ def extract_instagram_cookie(email: str, password: str, force_refresh: bool = Fa
     cookies_dir = Path(__file__).parent / "cookies"
     cookies_dir.mkdir(exist_ok=True)
 
+    # Find all existing cookie files
+    cookie_files = sorted(cookies_dir.glob("insta_cookie_*.json"), reverse=True)
+
+    # Check for valid cookies (less than 5 days old)
+    if not force_refresh and cookie_files:
+        for cookie_file_path in cookie_files:
+            # Extract date from filename: insta_cookie_YYYY_MM_DD.json
+            try:
+                filename = cookie_file_path.stem  # insta_cookie_YYYY_MM_DD
+                date_str = filename.replace("insta_cookie_", "")  # YYYY_MM_DD
+                cookie_date = datetime.strptime(date_str, "%Y_%m_%d")
+
+                # Calculate age in days
+                age_days = (datetime.now() - cookie_date).days
+
+                if age_days < 5:
+                    # Cookie is still valid, reuse it
+                    print(f">>> Found valid cookie from {date_str} ({age_days} days old)")
+                    print(f">>> Loading cookie from: {cookie_file_path}")
+                    with open(cookie_file_path, 'r') as f:
+                        cookies_list = json.load(f)
+                    return _format_cookie_string(cookies_list)
+                else:
+                    print(f">>> Cookie from {date_str} is {age_days} days old (expired)")
+            except (ValueError, IndexError):
+                # Skip malformed filenames
+                print(f">>> Skipping invalid cookie file: {cookie_file_path.name}")
+                continue
+
+    # If we reach here, no valid cookie found - generate new one
+    print(">>> No valid cookie found (older than 5 days or doesn't exist)")
+    print(">>> Starting Playwright to extract fresh cookies...")
+
     today = datetime.now().strftime("%Y_%m_%d")
     cookie_file = cookies_dir / f"insta_cookie_{today}.json"
-
-    # Check if today's cookie file exists
-    if cookie_file.exists() and not force_refresh:
-        print(f">>> Loading existing cookie from: {cookie_file}")
-        with open(cookie_file, 'r') as f:
-            cookies_list = json.load(f)
-        return _format_cookie_string(cookies_list)
-
-    print(">>> Starting Playwright to extract fresh cookies...")
 
     with sync_playwright() as p:
         browser = p.firefox.launch(headless=False)
