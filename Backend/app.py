@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
@@ -32,6 +32,9 @@ import models
 import schemas
 import crud
 from auth import get_current_user, authenticate_user, create_access_token, hash_password
+from account_rotation import get_least_used_account, increment_account_usage, NoAccountsAvailableError
+from credit_system import validate_scrape_request, deduct_credits, InsufficientCreditsError
+from scheduler import start_scheduler, stop_scheduler
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -71,14 +74,31 @@ if frontend_path.exists():
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on startup"""
+    """Initialize database and scheduler on startup"""
     print("Starting Instagram Reel Scraper API...")
     try:
         init_db()
-        print("Database initialized successfully")
+        print("[OK] Database initialized successfully")
     except Exception as e:
-        print(f"Database initialization failed: {e}")
+        print(f"[ERROR] Database initialization failed: {e}")
         print("API will start but database features will not work")
+
+    try:
+        start_scheduler()
+        print("[OK] Daily reset scheduler started")
+    except Exception as e:
+        print(f"[ERROR] Scheduler initialization failed: {e}")
+        print("Daily resets will not work automatically")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Gracefully shut down scheduler"""
+    try:
+        stop_scheduler()
+        print("[OK] Scheduler stopped")
+    except Exception as e:
+        print(f"[ERROR] Scheduler shutdown failed: {e}")
 
 
 # ==================== Root & Health Check ====================
@@ -223,6 +243,7 @@ def run_scraping_job_with_db(
     user_id: int,
     usernames: List[str],
     reel_count: int,
+    instagram_account_id: int,
     group_id: Optional[int] = None
 ):
     """Background task to run the scraping job with database integration"""
@@ -241,16 +262,27 @@ def run_scraping_job_with_db(
         print(f"   User ID: {user_id}")
         print(f"   Usernames: {usernames}")
         print(f"   Reel count: {reel_count}")
+        print(f"   Instagram Account ID: {instagram_account_id}")
         print(f"   Time: {time_module.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'='*60}\n")
 
-        # Get Instagram cookies (uses cached or extracts fresh)
-        print("🔑 Getting Instagram cookies...")
-        cookie_string = cookie_manager.get_cookie()
-        print("✔ Cookies ready\n")
+        # Get Instagram account from database
+        instagram_account = crud.get_instagram_account_by_id(db, instagram_account_id)
+        if not instagram_account:
+            raise Exception(f"Instagram account {instagram_account_id} not found")
 
-        # Create job in database
-        db_job = crud.create_job(db, user_id, job_id, usernames, reel_count)
+        print(f"[INFO] Using Instagram account: {instagram_account.username}")
+
+        # Get cookies from Instagram account (or use cookie manager as fallback)
+        if instagram_account.cookie_string:
+            cookie_string = instagram_account.cookie_string
+            print("[INFO] Using stored cookies from Instagram account")
+        else:
+            print("[WARN] No cookies stored for account, using cookie manager...")
+            cookie_string = cookie_manager.get_cookie()
+
+        # Create job in database with Instagram account linkage
+        db_job = crud.create_job(db, user_id, job_id, usernames, reel_count, instagram_account_id)
 
         # Update group usage if from group
         if group_id:
@@ -306,13 +338,18 @@ def run_scraping_job_with_db(
                         reel['comment_count'] = int(reel.get('comment_count', 0))
                         reel['like_count'] = int(reel.get('like_count', 0))
 
-                    # Bulk insert reels
-                    crud.bulk_create_reels(db, user_id, job_id, reels_data)
+                    # Bulk insert reels with Instagram account tracking
+                    crud.bulk_create_reels(db, user_id, job_id, reels_data, instagram_account_id)
+
+                    # Deduct credits for successfully scraped reels
+                    reels_scraped = len(df_result)
+                    deduct_credits(db, user_id, reels_scraped)
+                    print(f"[CREDITS] Deducted {reels_scraped} credits from user {user_id}")
 
                     result = {
                         'username': username,
                         'status': 'success',
-                        'reels_scraped': len(df_result),
+                        'reels_scraped': reels_scraped,
                         'csv_path': str(Path(meta_output_path).parent / "scrapped_data.csv"),
                         'json_path': str(meta_output_path)
                     }
@@ -335,6 +372,30 @@ def run_scraping_job_with_db(
 
         elapsed_time = time_module.time() - start_time
 
+        # Calculate total reels successfully scraped
+        total_reels_scraped = sum(r.get('reels_scraped', 0) for r in results if r['status'] == 'success')
+
+        # Update Instagram account usage counters
+        if total_reels_scraped > 0:
+            increment_account_usage(db, instagram_account_id, total_reels_scraped)
+            print(f"[ACCOUNT] Updated usage for Instagram account {instagram_account_id}: +{total_reels_scraped} reels")
+
+        # Log activity
+        crud.create_activity_log(
+            db=db,
+            event_type="scrape_job_completed",
+            user_id=user_id,
+            instagram_account_id=instagram_account_id,
+            job_id=job_id,
+            details={
+                "usernames": usernames,
+                "total_reels_scraped": total_reels_scraped,
+                "successful_accounts": sum(1 for r in results if r['status'] == 'success'),
+                "failed_accounts": sum(1 for r in results if r['status'] == 'failed'),
+                "duration_seconds": elapsed_time
+            }
+        )
+
         # Update job status to completed in both memory and database
         jobs_db[job_id]['status'] = 'completed'
         jobs_db[job_id]['progress'] = 100
@@ -349,6 +410,7 @@ def run_scraping_job_with_db(
         print(f"   Total time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
         print(f"   Successful: {sum(1 for r in results if r['status'] == 'success')}/{len(results)}")
         print(f"   Failed: {sum(1 for r in results if r['status'] == 'failed')}/{len(results)}")
+        print(f"   Total reels scraped: {total_reels_scraped}")
         print(f"   Reels saved to database")
         print(f"{'='*60}\n")
 
@@ -358,6 +420,20 @@ def run_scraping_job_with_db(
         jobs_db[job_id]['status'] = 'failed'
         jobs_db[job_id]['error_message'] = error_msg
         crud.update_job_status(db, job_id, 'failed', error_message=error_msg)
+
+        # Log failure
+        crud.create_activity_log(
+            db=db,
+            event_type="scrape_job_failed",
+            user_id=user_id,
+            instagram_account_id=instagram_account_id,
+            job_id=job_id,
+            details={
+                "error": error_msg,
+                "usernames": usernames
+            }
+        )
+
         print(f"\nJOB FAILED: {job_id} - {error_msg}\n")
 
     finally:
@@ -371,7 +447,7 @@ async def scrape_reels(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Start a scraping job (requires authentication)"""
+    """Start a scraping job (requires authentication, validates credits, uses account rotation)"""
     try:
         usernames = request.usernames
         reel_count = request.reel_count
@@ -379,6 +455,53 @@ async def scrape_reels(
 
         if not usernames:
             raise HTTPException(status_code=400, detail="No usernames provided")
+
+        # Calculate total reels requested
+        total_reels_requested = len(usernames) * reel_count
+
+        # Validate user has enough credits
+        is_valid, validation_msg, remaining_credits = validate_scrape_request(
+            db, current_user.id, total_reels_requested
+        )
+
+        if not is_valid:
+            # Log credit limit reached
+            crud.create_activity_log(
+                db=db,
+                event_type="credit_limit_reached",
+                user_id=current_user.id,
+                instagram_account_id=None,
+                job_id=None,
+                details={
+                    "requested_reels": total_reels_requested,
+                    "remaining_credits": remaining_credits
+                }
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=validation_msg
+            )
+
+        # Get least used Instagram account
+        try:
+            instagram_account = get_least_used_account(db)
+        except NoAccountsAvailableError as e:
+            # Log no accounts available
+            crud.create_activity_log(
+                db=db,
+                event_type="no_accounts_available",
+                user_id=current_user.id,
+                instagram_account_id=None,
+                job_id=None,
+                details={
+                    "requested_reels": total_reels_requested,
+                    "usernames": usernames
+                }
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(e)
+            )
 
         # Generate unique job ID
         job_id = f"job_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
@@ -401,15 +524,18 @@ async def scrape_reels(
         print(f"\nSCRAPE REQUEST RECEIVED - Job ID: {job_id}")
         print(f"   User: {current_user.email}")
         print(f"   Usernames: {usernames}")
-        print(f"   Reel count: {reel_count}\n")
+        print(f"   Reel count: {reel_count}")
+        print(f"   Instagram Account: {instagram_account.username} (ID: {instagram_account.id})")
+        print(f"   Credits remaining: {remaining_credits}\n")
 
-        # Start background task
+        # Start background task with Instagram account rotation
         background_tasks.add_task(
             run_scraping_job_with_db,
             job_id,
             current_user.id,
             usernames,
             reel_count,
+            instagram_account.id,  # Pass Instagram account ID
             group_id
         )
 
@@ -417,9 +543,11 @@ async def scrape_reels(
         return {
             'job_id': job_id,
             'status': 'started',
-            'message': 'Scraping job started. Use /api/job/{job_id} to check status'
+            'message': f'Scraping job started using Instagram account {instagram_account.username}. Use /api/job/{{job_id}} to check status'
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"\nERROR: {str(e)}\n")
         raise HTTPException(status_code=500, detail=str(e))
@@ -561,6 +689,255 @@ async def export_analytics_csv(
             "Content-Disposition": f"attachment; filename=analytics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         }
     )
+
+
+# ==================== Admin API Endpoints (Cookie Management) ====================
+
+def verify_api_key(x_api_key: str = Header(...)):
+    """Verify API key for admin endpoints"""
+    from database import SessionLocal
+    from passlib.context import CryptContext
+
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    db = SessionLocal()
+
+    try:
+        # Get all active API keys
+        api_keys = crud.get_all_api_keys(db)
+
+        # Check if provided key matches any active API key
+        for api_key_record in api_keys:
+            if api_key_record.is_active and pwd_context.verify(x_api_key, api_key_record.api_key):
+                # Update last used timestamp
+                api_key_record.last_used_at = datetime.now()
+                db.commit()
+
+                # Return a dict instead of the model object to avoid session binding issues
+                return {
+                    "id": api_key_record.id,
+                    "key_name": api_key_record.key_name,
+                    "is_active": api_key_record.is_active
+                }
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or inactive API key"
+        )
+
+    finally:
+        db.close()
+
+
+@app.post("/api/admin/instagram-accounts/{account_id}/cookies")
+async def update_instagram_cookies(
+    account_id: int,
+    cookies: dict,
+    api_key: dict = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Update cookies for a specific Instagram account (requires API key authentication)"""
+    try:
+        # Validate cookies not empty
+        if not cookies or len(cookies) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cookies cannot be empty"
+            )
+
+        # Get Instagram account
+        account = crud.get_instagram_account_by_id(db, account_id)
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Instagram account with ID {account_id} not found"
+            )
+
+        # Format cookies for HTTP headers
+        cookie_string = "; ".join([f"{name}={value}" for name, value in cookies.items()])
+
+        # Extract CSRF token if present
+        x_csrf_token = cookies.get('csrftoken', '')
+
+        # Update account cookies
+        crud.update_instagram_account_cookies(
+            db=db,
+            account_id=account_id,
+            cookies=cookies,
+            cookie_string=cookie_string,
+            x_csrf_token=x_csrf_token
+        )
+
+        # Log the update
+        crud.create_activity_log(
+            db=db,
+            event_type="cookies_updated",
+            user_id=None,
+            instagram_account_id=account_id,
+            job_id=None,
+            details={
+                "account_username": account.username,
+                "updated_by_api_key": api_key["key_name"],
+                "cookies_count": len(cookies)
+            }
+        )
+
+        print(f"[OK] Cookies updated for Instagram account: {account.username} (ID: {account_id})")
+
+        return {
+            "status": "success",
+            "message": f"Cookies updated for account {account.username}",
+            "account_id": account_id,
+            "account_username": account.username,
+            "updated_at": datetime.now().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to update cookies for account {account_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update cookies: {str(e)}"
+        )
+
+
+@app.post("/api/admin/instagram-accounts/bulk-update-cookies")
+async def bulk_update_instagram_cookies(
+    updates: List[dict],
+    api_key: dict = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """
+    Bulk update cookies for multiple Instagram accounts
+    Expected format: [{"account_id": 1, "cookies": {...}}, {"account_id": 2, "cookies": {...}}]
+    """
+    try:
+        if not updates or len(updates) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No updates provided"
+            )
+
+        results = []
+        errors = []
+
+        for update in updates:
+            account_id = update.get('account_id')
+            cookies = update.get('cookies')
+
+            if not account_id or not cookies:
+                errors.append({
+                    "account_id": account_id,
+                    "error": "Missing account_id or cookies"
+                })
+                continue
+
+            try:
+                # Get Instagram account
+                account = crud.get_instagram_account_by_id(db, account_id)
+                if not account:
+                    errors.append({
+                        "account_id": account_id,
+                        "error": "Account not found"
+                    })
+                    continue
+
+                # Format cookies
+                cookie_string = "; ".join([f"{name}={value}" for name, value in cookies.items()])
+                x_csrf_token = cookies.get('csrftoken', '')
+
+                # Update cookies
+                crud.update_instagram_account_cookies(
+                    db=db,
+                    account_id=account_id,
+                    cookies=cookies,
+                    cookie_string=cookie_string,
+                    x_csrf_token=x_csrf_token
+                )
+
+                results.append({
+                    "account_id": account_id,
+                    "account_username": account.username,
+                    "status": "success"
+                })
+
+                print(f"[OK] Bulk update: Cookies updated for {account.username}")
+
+            except Exception as e:
+                errors.append({
+                    "account_id": account_id,
+                    "error": str(e)
+                })
+
+        # Log bulk update
+        crud.create_activity_log(
+            db=db,
+            event_type="bulk_cookies_updated",
+            user_id=None,
+            instagram_account_id=None,
+            job_id=None,
+            details={
+                "updated_by_api_key": api_key["key_name"],
+                "successful_updates": len(results),
+                "failed_updates": len(errors),
+                "total_requested": len(updates)
+            }
+        )
+
+        return {
+            "status": "completed",
+            "successful_updates": len(results),
+            "failed_updates": len(errors),
+            "results": results,
+            "errors": errors
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Bulk cookie update failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Bulk update failed: {str(e)}"
+        )
+
+
+@app.get("/api/admin/instagram-accounts")
+async def list_instagram_accounts(
+    api_key: dict = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """List all Instagram accounts in the pool (requires API key authentication)"""
+    try:
+        accounts = crud.get_all_instagram_accounts(db)
+
+        account_list = []
+        for account in accounts:
+            account_list.append({
+                "id": account.id,
+                "username": account.username,
+                "email": account.email,
+                "is_active": account.is_active,
+                "is_paused": account.is_paused,
+                "daily_scrape_count": account.daily_scrape_count,
+                "total_scrapes": account.total_scrapes,
+                "success_count": account.success_count,
+                "failure_count": account.failure_count,
+                "cookies_updated_at": account.cookies_updated_at.isoformat() if account.cookies_updated_at else None,
+                "last_used_at": account.last_used_at.isoformat() if account.last_used_at else None
+            })
+
+        return {
+            "status": "success",
+            "count": len(account_list),
+            "accounts": account_list
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list accounts: {str(e)}"
+        )
 
 
 # ==================== Server Startup ====================

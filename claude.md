@@ -651,16 +651,772 @@ logs = get_activity_logs(db, event_type="scrape_success", limit=10)
 user_logs = get_activity_logs(db, user_id=1, limit=20)
 ```
 
-### Next Steps: Phase 2
+---
 
-Phase 2 will add:
+## 🚀 Phase 2: Enhanced API & Cookie Management (NEW)
+
+**Status**: ✅ Implemented
+**Date**: December 2025
+
+### Overview
+
+Phase 2 enhances the scraping system with automatic account rotation, credit validation, cookie update API endpoints, and a remote cookie updater script for automated cookie management.
+
+### New Features
+
+#### 1. Enhanced Scraping Endpoint
+- **Automatic Credit Validation**: Checks user credits before starting job
+- **Automatic Account Rotation**: Selects least-used Instagram account
+- **Comprehensive Logging**: All scraping events logged to activity_logs
+- **Better Error Handling**: Specific error codes for different failure types
+
+#### 2. Cookie Update API Endpoints
+- **Individual Cookie Updates**: Update cookies for specific Instagram accounts
+- **Bulk Cookie Updates**: Update multiple accounts at once
+- **API Key Authentication**: Secure endpoints with hashed API keys
+- **Account Listing**: View all Instagram accounts in pool
+
+#### 3. Remote Cookie Updater Script
+- **Automated Cookie Extraction**: Uses Playwright to log in and extract cookies
+- **Server Integration**: Automatically uploads cookies to server via API
+- **Multi-Account Support**: Processes multiple Instagram accounts sequentially
+- **Error Handling**: Robust error handling with detailed logging
+- **Windows Task Scheduler Ready**: Designed to run as scheduled task
+
+#### 4. Daily Reset Scheduler
+- **Automatic Resets**: Runs daily at midnight
+- **User Credits**: Resets all users' daily credits to 0
+- **Account Counters**: Resets Instagram accounts' daily scrape counts
+- **Activity Logging**: Logs reset events for monitoring
+
+#### 5. API Key Management
+- **Secure Generation**: Cryptographically secure random keys
+- **Hashed Storage**: Keys stored as bcrypt hashes
+- **Usage Tracking**: Last used timestamp tracked
+- **Revocation Support**: Deactivate keys without deletion
+
+### API Documentation (Phase 2)
+
+#### Enhanced POST `/api/scrape`
+Improved scraping endpoint with automatic rotation and credit validation.
+
+**Authentication**: Required (Bearer token)
+
+**Request Body**:
+```json
+{
+  "usernames": ["username1", "username2"],
+  "reel_count": 20,
+  "group_id": null  // Optional
+}
+```
+
+**Success Response** (200):
+```json
+{
+  "job_id": "job_20251218_143022_123456",
+  "status": "started",
+  "message": "Scraping job started using Instagram account insta_account_1. Use /api/job/{job_id} to check status"
+}
+```
+
+**Error Responses**:
+- **403 Forbidden** - Insufficient credits
+  ```json
+  {
+    "detail": "Insufficient credits. Remaining: 50, Required: 100"
+  }
+  ```
+
+- **503 Service Unavailable** - No Instagram accounts available
+  ```json
+  {
+    "detail": "All Instagram accounts are exhausted. Try again later."
+  }
+  ```
+
+#### POST `/api/admin/instagram-accounts/{account_id}/cookies`
+Update cookies for a specific Instagram account.
+
+**Authentication**: API Key (X-API-Key header)
+
+**Headers**:
+```
+X-API-Key: your-api-key-here
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "sessionid": "abc123...",
+  "csrftoken": "xyz789...",
+  "ds_user_id": "12345678",
+  "ig_did": "ABCD-1234...",
+  "mid": "Y1Z2X3...",
+  "datr": "pqr456...",
+  "rur": "ATN",
+  "wd": "1920x1080",
+  "ig_nrcb": "1"
+}
+```
+
+**Success Response** (200):
+```json
+{
+  "status": "success",
+  "message": "Cookies updated for account insta_account_1",
+  "account_id": 1,
+  "account_username": "insta_account_1",
+  "updated_at": "2025-12-18T14:30:22.123456"
+}
+```
+
+**Error Responses**:
+- **401 Unauthorized** - Invalid API key
+- **404 Not Found** - Instagram account doesn't exist
+- **400 Bad Request** - Empty cookies
+
+#### POST `/api/admin/instagram-accounts/bulk-update-cookies`
+Update cookies for multiple Instagram accounts at once.
+
+**Authentication**: API Key (X-API-Key header)
+
+**Request Body**:
+```json
+[
+  {
+    "account_id": 1,
+    "cookies": {
+      "sessionid": "abc123...",
+      "csrftoken": "xyz789..."
+    }
+  },
+  {
+    "account_id": 2,
+    "cookies": {
+      "sessionid": "def456...",
+      "csrftoken": "uvw012..."
+    }
+  }
+]
+```
+
+**Success Response** (200):
+```json
+{
+  "status": "completed",
+  "successful_updates": 2,
+  "failed_updates": 0,
+  "results": [
+    {
+      "account_id": 1,
+      "account_username": "insta_account_1",
+      "status": "success"
+    },
+    {
+      "account_id": 2,
+      "account_username": "insta_account_2",
+      "status": "success"
+    }
+  ],
+  "errors": []
+}
+```
+
+#### GET `/api/admin/instagram-accounts`
+List all Instagram accounts in the pool.
+
+**Authentication**: API Key (X-API-Key header)
+
+**Success Response** (200):
+```json
+{
+  "status": "success",
+  "count": 3,
+  "accounts": [
+    {
+      "id": 1,
+      "username": "insta_account_1",
+      "email": "account1@gmail.com",
+      "is_active": true,
+      "is_paused": false,
+      "daily_scrape_count": 150,
+      "total_scrapes": 2500,
+      "success_count": 2450,
+      "failure_count": 50,
+      "cookies_updated_at": "2025-12-18T14:30:22.123456",
+      "last_used_at": "2025-12-18T15:00:00.000000"
+    }
+  ]
+}
+```
+
+### New Backend Modules (Phase 2)
+
+#### [scheduler.py](Backend/scheduler.py)
+Background scheduler for daily reset jobs.
+
+**Key Functions**:
+- `start_scheduler()` - Initialize and start the scheduler
+- `stop_scheduler()` - Gracefully stop the scheduler
+- `daily_reset_job()` - Async function that runs at midnight
+- `run_manual_reset()` - Manually trigger reset for testing
+- `get_scheduler_status()` - Check scheduler status and next run time
+
+**Automatic Startup**:
+The scheduler automatically starts when the FastAPI app starts and stops on shutdown.
+
+**Manual Testing**:
+```bash
+cd Backend
+python scheduler.py
+```
+
+**Expected Output**:
+```
+============================================================
+Daily Reset Scheduler - Manual Test
+============================================================
+Starting daily reset job at 2025-12-18 23:59:59
+============================================================
+Resetting user credits...
+[OK] Reset credits for 15 user(s)
+Resetting Instagram account daily counts...
+[OK] Reset daily counts for 3 Instagram account(s)
+[OK] Daily reset completed successfully at 2025-12-18 00:00:05
+============================================================
+```
+
+#### [generate_api_key.py](Backend/generate_api_key.py)
+Utility for managing API keys.
+
+**Commands**:
+
+**Create New API Key**:
+```bash
+python generate_api_key.py create "Cookie Updater - Windows PC"
+```
+
+**Output**:
+```
+======================================================================
+API KEY GENERATED SUCCESSFULLY
+======================================================================
+Key Name: Cookie Updater - Windows PC
+Key ID: 1
+Created At: 2025-12-18 14:30:22.123456
+
+IMPORTANT: Save this API key securely. It will not be shown again!
+----------------------------------------------------------------------
+API Key: xYz123AbC456DeF789GhI012JkL345MnO678PqR901StU234VwX567
+----------------------------------------------------------------------
+
+Use this key in the 'X-API-Key' header when calling admin endpoints.
+======================================================================
+```
+
+**List All API Keys**:
+```bash
+python generate_api_key.py list
+```
+
+**Revoke an API Key**:
+```bash
+python generate_api_key.py revoke 1
+```
+
+#### [remote_cookie_updater.py](Backend/Scripts/remote_cookie_updater.py)
+Automated cookie extraction and server update script.
+
+**Setup**:
+
+1. Install Playwright:
+   ```bash
+   pip install playwright
+   playwright install firefox
+   ```
+
+2. Configure the script:
+   Edit `remote_cookie_updater.py` and update:
+   ```python
+   SERVER_URL = "https://your-server.com"  # Your server URL
+   API_KEY = "your-api-key-here"  # From generate_api_key.py
+
+   INSTAGRAM_ACCOUNTS = [
+       {
+           "id": 2,  # Database ID from instagram_accounts table
+           "email": "account1@gmail.com",
+           "password": "your_password"
+       },
+       {
+           "id": 3,
+           "email": "account2@gmail.com",
+           "password": "your_password"
+       }
+   ]
+   ```
+
+3. Test server connection:
+   ```bash
+   python remote_cookie_updater.py test
+   ```
+
+4. Run manually:
+   ```bash
+   python remote_cookie_updater.py
+   ```
+
+**Expected Output**:
+```
+======================================================================
+INSTAGRAM COOKIE UPDATER
+======================================================================
+Server: https://your-server.com
+Accounts to update: 2
+Started at: 2025-12-18 14:30:22
+======================================================================
+
+[1/2] Processing Account ID: 2
+Email: account1@gmail.com
+----------------------------------------------------------------------
+  [1/4] Launching browser...
+  [2/4] Navigating to Instagram login...
+  [3/4] Logging in...
+  [3/4] Login successful!
+  [4/4] Extracting cookies...
+  [OK] Extracted 9 essential cookies
+  [UPLOAD] Sending cookies to server...
+  [OK] Server updated successfully!
+       Account: insta_account_1
+       Updated at: 2025-12-18T14:32:15.123456
+
+  [WAIT] Waiting 15 seconds before next account...
+
+[2/2] Processing Account ID: 3
+...
+
+======================================================================
+COOKIE UPDATE SUMMARY
+======================================================================
+Total Accounts: 2
+Successful:     2
+Failed:         0
+Completed at:   2025-12-18 14:35:30
+======================================================================
+[SUCCESS] All accounts updated successfully!
+```
+
+**Windows Task Scheduler Setup**:
+
+1. Open Task Scheduler
+2. Create Basic Task:
+   - Name: "Instagram Cookie Update"
+   - Trigger: Repeat every 5 days
+   - Time: 2:00 AM (low traffic time)
+3. Action: Start a program
+   - Program: `C:\Python\python.exe`
+   - Arguments: `C:\path\to\remote_cookie_updater.py`
+   - Start in: `C:\path\to\Backend\Scripts\`
+4. Settings:
+   - Allow task to run on demand
+   - Stop if runs longer than 1 hour
+   - Run whether user is logged on or not
+
+### Testing Phase 2
+
+**Test Script**: `Backend/test_phase2.py`
+
+**Run Tests**:
+```bash
+cd Backend
+python test_phase2.py
+```
+
+**Tests Include**:
+1. Account Rotation Logic - Verify least-used selection
+2. Credit System - Validation, deduction, and reset
+3. API Key Management - Creation and retrieval
+4. Activity Logging - Log creation and verification
+5. Instagram Account Management - Cookie updates
+6. Daily Reset Functions - User and account resets
+7. Job-Account Linkage - Verify job creation with Instagram account
+
+**Expected Output**:
+```
+============================================================
+PHASE 2 TESTING - ENHANCED FEATURES
+============================================================
+Started at: 2025-12-18 14:30:22
+============================================================
+
+============================================================
+TEST: Account Rotation System
+============================================================
+[OK] Selected account: insta_account_1 (ID: 2)
+     Daily count: 0
+     Total scrapes: 0
+[OK] Usage incremented correctly: 0 -> 5
+
+============================================================
+TEST: Credit System
+============================================================
+Testing with user: user@example.com (ID: 1)
+Current credits: 0/2000
+[OK] Credit validation passed. Remaining: 2000
+[OK] Credits deducted correctly: 0 -> 10
+[OK] Correctly rejected excessive request: Insufficient credits...
+[OK] Credits reset successfully to 0
+
+...
+
+============================================================
+TEST SUMMARY
+============================================================
+[OK] Account Rotation Logic
+[OK] Credit System
+[OK] API Key Management
+[OK] Activity Logging
+[OK] Instagram Account Management
+[OK] Daily Reset Functions
+[OK] Job-Account Linkage
+============================================================
+Tests Passed: 7/7 (100.0%)
+[OK] All tests PASSED!
+============================================================
+```
+
+### Setup Instructions (Phase 2)
+
+Phase 2 builds on Phase 1, so ensure Phase 1 is completed first.
+
+#### Step 1: Verify Phase 1
+```bash
+cd Backend
+python test_phase1.py
+```
+
+All Phase 1 tests should pass.
+
+#### Step 2: No New Dependencies
+Phase 2 uses the same dependencies from Phase 1. No additional installations needed.
+
+#### Step 3: Generate API Key
+```bash
+python generate_api_key.py create "Cookie Updater - Main"
+```
+
+Save the API key securely - you'll need it for the remote cookie updater.
+
+#### Step 4: Test Enhanced Scraping Endpoint
+
+The scraping endpoint now automatically validates credits and selects Instagram accounts. No code changes needed in your frontend!
+
+**Before Phase 2**:
+- Manual cookie management
+- No credit validation
+- No account rotation
+
+**After Phase 2**:
+- Automatic credit check before scraping
+- Automatic selection of least-used Instagram account
+- Comprehensive activity logging
+- Cookies can be updated remotely via API
+
+#### Step 5: Set Up Remote Cookie Updater (Optional)
+
+Only needed if you want automated cookie updates every 5 days.
+
+1. Install Playwright on Windows PC:
+   ```bash
+   pip install playwright
+   playwright install firefox
+   ```
+
+2. Configure `remote_cookie_updater.py` with your server URL and API key
+
+3. Test connection:
+   ```bash
+   python remote_cookie_updater.py test
+   ```
+
+4. Run manually once to verify:
+   ```bash
+   python remote_cookie_updater.py
+   ```
+
+5. Set up Windows Task Scheduler (see instructions above)
+
+### How It Works (Phase 2)
+
+#### Enhanced Scraping Flow
+
+```
+User requests scrape
+  ↓
+System validates user credits
+  ├─ Insufficient credits → Return 403 error
+  └─ Credits OK → Continue
+      ↓
+System selects least-used Instagram account
+  ├─ No accounts available → Return 503 error
+  └─ Account selected → Continue
+      ↓
+Job created with user + Instagram account linkage
+      ↓
+Background task starts scraping
+      ↓
+For each successfully scraped reel:
+  - Deduct 1 credit from user
+  - Save reel to database with instagram_account_id
+      ↓
+After job completes:
+  - Update Instagram account usage counters
+  - Log activity (success/failure)
+      ↓
+Return job status to user
+```
+
+#### Cookie Update Flow
+
+```
+Windows PC (runs every 5 days)
+  ↓
+Playwright launches browser
+  ↓
+Logs into each Instagram account
+  ↓
+Extracts essential cookies
+  ↓
+Sends cookies to server via API
+  ├─ Authentication: X-API-Key header
+  ├─ Endpoint: POST /api/admin/instagram-accounts/{id}/cookies
+  └─ Server validates API key
+      ↓
+Server updates instagram_accounts table
+  - Stores cookies as JSONB
+  - Updates cookie_string for headers
+  - Extracts and stores CSRF token
+  - Sets cookies_updated_at timestamp
+      ↓
+Activity logged
+      ↓
+Instagram account ready for scraping
+```
+
+#### Daily Reset Flow
+
+```
+Scheduler (runs at 00:00 daily)
+  ↓
+Reset all users:
+  - credits_used_today = 0
+  - last_credit_reset_date = today
+      ↓
+Reset all Instagram accounts:
+  - daily_scrape_count = 0
+  - last_reset_date = today
+      ↓
+Log reset event in activity_logs
+      ↓
+System ready for new day
+```
+
+### Configuration (Phase 2)
+
+#### Change Daily Reset Time
+
+Edit `Backend/scheduler.py`:
+```python
+scheduler.add_job(
+    daily_reset_job,
+    trigger=CronTrigger(hour=2, minute=30),  # 2:30 AM instead of midnight
+    id='daily_reset',
+    name='Daily Credit and Usage Counter Reset',
+    replace_existing=True
+)
+```
+
+#### Change Cookie Update Frequency
+
+Edit Windows Task Scheduler trigger:
+- Every 3 days: More cookie refreshes, more automation overhead
+- Every 7 days: Less frequent updates, cookies may expire sooner
+- Recommended: 5 days (balanced)
+
+#### Modify Essential Cookies List
+
+Edit `Backend/Scripts/remote_cookie_updater.py`:
+```python
+ESSENTIAL_COOKIES = [
+    'sessionid',     # Required - user session
+    'csrftoken',     # Required - CSRF protection
+    'ds_user_id',    # Required - user ID
+    'ig_did',        # Required - device ID
+    'mid',           # Recommended
+    'datr',          # Recommended
+    'rur',           # Optional - routing
+    'wd',            # Optional - window dimensions
+    'ig_nrcb'        # Optional - non-robot callback
+]
+```
+
+### Monitoring (Phase 2)
+
+#### Check Scheduler Status
+```python
+from scheduler import get_scheduler_status
+
+status = get_scheduler_status()
+print(f"Scheduler: {status['status']}")
+for job in status['jobs']:
+    print(f"  Next run: {job['next_run']}")
+```
+
+#### View Recent Cookie Updates
+```python
+from crud import get_activity_logs
+
+logs = get_activity_logs(db, event_type="cookies_updated", limit=10)
+for log in logs:
+    print(f"Account {log.instagram_account_id} updated at {log.created_at}")
+    print(f"  By API key: {log.details['updated_by_api_key']}")
+```
+
+#### Check Instagram Account Cookie Health
+```python
+from datetime import datetime, timedelta
+
+accounts = get_all_instagram_accounts(db)
+for account in accounts:
+    if account.cookies_updated_at:
+        age = datetime.now() - account.cookies_updated_at
+        if age > timedelta(days=7):
+            print(f"[WARNING] {account.username} cookies are {age.days} days old")
+        else:
+            print(f"[OK] {account.username} cookies updated {age.days} days ago")
+    else:
+        print(f"[ERROR] {account.username} has no cookies!")
+```
+
+### Troubleshooting Phase 2
+
+#### Scheduler not running
+Check startup logs:
+```
+[OK] Database initialized successfully
+[OK] Daily reset scheduler started
+```
+
+If missing, check `Backend/app.py` startup event.
+
+#### Cookie update fails with 401
+- API key invalid or revoked
+- Check API key exists: `python generate_api_key.py list`
+- Generate new key: `python generate_api_key.py create "New Key"`
+
+#### Remote script can't connect to server
+- Check `SERVER_URL` in `remote_cookie_updater.py`
+- Test server accessibility: `curl http://your-server.com/health`
+- Check firewall rules
+- Verify server is running
+
+#### Playwright login fails
+- Instagram detected automation (use `headless=False` to debug)
+- Password incorrect
+- Account requires 2FA (not supported yet)
+- Instagram changed login flow (update selectors)
+
+#### Credits not being deducted
+Check if scraping succeeded:
+```python
+# Credits only deducted for successfully scraped reels
+# Check job results
+job = get_job_by_id(db, job_id)
+print(f"Status: {job.status}")
+print(f"Credits consumed: {job.credits_consumed}")
+```
+
+#### Account rotation not working
+All accounts paused or inactive:
+```python
+accounts = get_all_instagram_accounts(db)
+active = [a for a in accounts if a.is_active and not a.is_paused]
+print(f"Active accounts: {len(active)}")
+```
+
+#### Scraping fails - No reels scraped
+**Symptom**: Scraping job starts but returns 0 reels, no errors in logs
+
+**Cause**: Instagram account has invalid/test cookies
+
+**Diagnosis**:
+```python
+from database import SessionLocal
+from crud import get_all_instagram_accounts
+
+db = SessionLocal()
+accounts = get_all_instagram_accounts(db)
+
+for account in accounts:
+    cookie_len = len(account.cookie_string) if account.cookie_string else 0
+    print(f"ID: {account.id}, Username: {account.username}")
+    print(f"  Cookie length: {cookie_len}")
+    print(f"  Active: {account.is_active}, Paused: {account.is_paused}")
+
+    # Check if cookies look valid (should be >300 chars for real cookies)
+    if cookie_len < 100:
+        print(f"  ⚠️ WARNING: Cookies appear invalid (too short)")
+
+db.close()
+```
+
+**Solution**:
+1. **Option 1** - Pause accounts with invalid cookies:
+   ```python
+   from account_rotation import pause_account
+   pause_account(db, account_id=1)  # Replace with actual account ID
+   ```
+
+2. **Option 2** - Update cookies using remote_cookie_updater:
+   ```bash
+   # Configure the account in remote_cookie_updater.py
+   # Then run it to extract fresh cookies
+   python Backend/Scripts/remote_cookie_updater.py
+   ```
+
+3. **Option 3** - Manually update via API:
+   ```python
+   import requests
+
+   cookies = {
+       "sessionid": "valid_session_id_here",
+       "csrftoken": "valid_csrf_token_here",
+       # ... other cookies
+   }
+
+   response = requests.post(
+       "http://localhost:8080/api/admin/instagram-accounts/1/cookies",
+       headers={"X-API-Key": "your-api-key"},
+       json=cookies
+   )
+   print(response.json())
+   ```
+
+**Prevention**: Always verify new Instagram accounts have valid cookies before activating them. Test cookies are for development only!
+
+### Next Steps: Phase 3
+
+Phase 3 will add:
 - Admin panel web UI
-- Cookie update API endpoints
-- Remote cookie updater script
-- Enhanced scraping endpoints with rotation
-- Daily reset scheduler
+  - User management interface
+  - Instagram account management
+  - Activity logs viewer
+  - System statistics dashboard
+- Real-time notifications
+- Advanced analytics
 
-**See**: [Implementation Plan](https://claude.com/plans/distributed-spinning-tarjan.md)
+---
 
 ### Troubleshooting Phase 1
 
