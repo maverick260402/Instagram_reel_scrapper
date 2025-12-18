@@ -131,15 +131,17 @@ def update_group_usage(db: Session, group_id: int, user_id: int):
 
 # ==================== Scraping Job CRUD ====================
 
-def create_job(db: Session, user_id: int, job_id: str, usernames: List[str], reel_count: int) -> models.ScrapingJob:
+def create_job(db: Session, user_id: int, job_id: str, usernames: List[str], reel_count: int, instagram_account_id: Optional[int] = None) -> models.ScrapingJob:
     """Create a new scraping job"""
     db_job = models.ScrapingJob(
         job_id=job_id,
         user_id=user_id,
+        instagram_account_id=instagram_account_id,
         usernames=usernames,
         reel_count=reel_count,
         status='running',
-        progress=0
+        progress=0,
+        credits_consumed=0
     )
     db.add(db_job)
     db.commit()
@@ -205,7 +207,7 @@ def create_reel(db: Session, user_id: int, job_id: str, reel_data: dict) -> mode
     return db_reel
 
 
-def bulk_create_reels(db: Session, user_id: int, job_id: str, reels_data: List[dict]):
+def bulk_create_reels(db: Session, user_id: int, job_id: str, reels_data: List[dict], instagram_account_id: Optional[int] = None):
     """Bulk create reel records - optimized for speed"""
     if not reels_data:
         return
@@ -215,6 +217,7 @@ def bulk_create_reels(db: Session, user_id: int, job_id: str, reels_data: List[d
         {
             'job_id': job_id,
             'user_id': user_id,
+            'instagram_account_id': instagram_account_id,
             'instagram_username': reel.get('username', ''),
             'reel_pk': str(reel.get('pk', '')),
             'reel_code': reel.get('code'),
@@ -326,3 +329,196 @@ def get_unique_usernames(db: Session, user_id: int) -> List[str]:
         .order_by(models.ScrapedReel.instagram_username)\
         .all()
     return [row[0] for row in result if row[0]]
+
+
+# ==================== Instagram Account CRUD ====================
+
+def create_instagram_account(db: Session, username: str, email: str, password: str) -> models.InstagramAccount:
+    """Create a new Instagram account in the pool"""
+    db_account = models.InstagramAccount(
+        username=username,
+        email=email,
+        password=password
+    )
+    db.add(db_account)
+    db.commit()
+    db.refresh(db_account)
+    return db_account
+
+
+def get_instagram_account_by_id(db: Session, account_id: int) -> Optional[models.InstagramAccount]:
+    """Get Instagram account by ID"""
+    return db.query(models.InstagramAccount).filter(models.InstagramAccount.id == account_id).first()
+
+
+def get_instagram_account_by_username(db: Session, username: str) -> Optional[models.InstagramAccount]:
+    """Get Instagram account by username"""
+    return db.query(models.InstagramAccount).filter(models.InstagramAccount.username == username).first()
+
+
+def get_all_instagram_accounts(db: Session) -> List[models.InstagramAccount]:
+    """Get all Instagram accounts"""
+    return db.query(models.InstagramAccount).order_by(asc(models.InstagramAccount.daily_scrape_count)).all()
+
+
+def update_instagram_account_cookies(
+    db: Session,
+    account_id: int,
+    cookies: dict,
+    cookie_string: str,
+    x_csrf_token: str
+) -> Optional[models.InstagramAccount]:
+    """Update Instagram account cookies"""
+    account = get_instagram_account_by_id(db, account_id)
+    if not account:
+        return None
+
+    account.cookies = cookies
+    account.cookie_string = cookie_string
+    account.x_csrf_token = x_csrf_token
+    account.cookies_updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(account)
+    return account
+
+
+def delete_instagram_account(db: Session, account_id: int) -> bool:
+    """Delete an Instagram account"""
+    account = get_instagram_account_by_id(db, account_id)
+    if not account:
+        return False
+
+    db.delete(account)
+    db.commit()
+    return True
+
+
+# ==================== API Key CRUD ====================
+
+def create_api_key(db: Session, key_name: str, api_key_hash: str) -> models.ApiKey:
+    """Create a new API key"""
+    db_key = models.ApiKey(
+        key_name=key_name,
+        api_key=api_key_hash
+    )
+    db.add(db_key)
+    db.commit()
+    db.refresh(db_key)
+    return db_key
+
+
+def get_api_key_by_key(db: Session, api_key_hash: str) -> Optional[models.ApiKey]:
+    """Get API key by hashed key"""
+    return db.query(models.ApiKey).filter(
+        models.ApiKey.api_key == api_key_hash,
+        models.ApiKey.is_active == True
+    ).first()
+
+
+def get_all_api_keys(db: Session) -> List[models.ApiKey]:
+    """Get all API keys"""
+    return db.query(models.ApiKey).order_by(desc(models.ApiKey.created_at)).all()
+
+
+def deactivate_api_key(db: Session, key_id: int) -> bool:
+    """Deactivate an API key"""
+    key = db.query(models.ApiKey).filter(models.ApiKey.id == key_id).first()
+    if not key:
+        return False
+
+    key.is_active = False
+    db.commit()
+    return True
+
+
+def update_api_key_last_used(db: Session, key_id: int):
+    """Update API key last used timestamp"""
+    key = db.query(models.ApiKey).filter(models.ApiKey.id == key_id).first()
+    if key:
+        key.last_used_at = datetime.utcnow()
+        db.commit()
+
+
+# ==================== Admin User CRUD ====================
+
+def create_admin_user(db: Session, username: str, email: str, password_hash: str) -> models.AdminUser:
+    """Create a new admin user"""
+    db_admin = models.AdminUser(
+        username=username,
+        email=email,
+        password_hash=password_hash
+    )
+    db.add(db_admin)
+    db.commit()
+    db.refresh(db_admin)
+    return db_admin
+
+
+def get_admin_by_username(db: Session, username: str) -> Optional[models.AdminUser]:
+    """Get admin user by username"""
+    return db.query(models.AdminUser).filter(
+        models.AdminUser.username == username,
+        models.AdminUser.is_active == True
+    ).first()
+
+
+def get_admin_by_id(db: Session, admin_id: int) -> Optional[models.AdminUser]:
+    """Get admin user by ID"""
+    return db.query(models.AdminUser).filter(models.AdminUser.id == admin_id).first()
+
+
+def update_admin_last_login(db: Session, admin_id: int):
+    """Update admin last login timestamp"""
+    admin = get_admin_by_id(db, admin_id)
+    if admin:
+        admin.last_login = datetime.utcnow()
+        db.commit()
+
+
+# ==================== Activity Log CRUD ====================
+
+def create_activity_log(
+    db: Session,
+    event_type: str,
+    user_id: Optional[int] = None,
+    instagram_account_id: Optional[int] = None,
+    job_id: Optional[str] = None,
+    details: Optional[dict] = None
+) -> models.ActivityLog:
+    """Create an activity log entry"""
+    log = models.ActivityLog(
+        event_type=event_type,
+        user_id=user_id,
+        instagram_account_id=instagram_account_id,
+        job_id=job_id,
+        details=details
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(log)
+    return log
+
+
+def get_activity_logs(
+    db: Session,
+    event_type: Optional[str] = None,
+    user_id: Optional[int] = None,
+    instagram_account_id: Optional[int] = None,
+    limit: int = 100
+) -> List[models.ActivityLog]:
+    """Get activity logs with optional filtering"""
+    query = db.query(models.ActivityLog)
+
+    if event_type:
+        query = query.filter(models.ActivityLog.event_type == event_type)
+    if user_id:
+        query = query.filter(models.ActivityLog.user_id == user_id)
+    if instagram_account_id:
+        query = query.filter(models.ActivityLog.instagram_account_id == instagram_account_id)
+
+    return query.order_by(desc(models.ActivityLog.created_at)).limit(limit).all()
+
+
+def get_recent_activity(db: Session, limit: int = 50) -> List[models.ActivityLog]:
+    """Get recent activity logs"""
+    return db.query(models.ActivityLog).order_by(desc(models.ActivityLog.created_at)).limit(limit).all()

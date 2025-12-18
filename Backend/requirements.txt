@@ -37,3 +37,6 @@ zstandard==0.25.0
 
 # Web Automation
 playwright
+
+# Task Scheduling
+APScheduler==3.10.4

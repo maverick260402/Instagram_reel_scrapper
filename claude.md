@@ -326,6 +326,370 @@ View console logs in:
 - **Data Privacy**: Be mindful of Instagram's Terms of Service when scraping data
 - **Session Expiry**: Cookies expire periodically and need to be refreshed
 
+---
+
+## 🚀 Phase 1: Multi-User System (NEW)
+
+**Status**: ✅ Implemented
+**Date**: December 2025
+
+### Overview
+
+Phase 1 adds multi-user support with intelligent Instagram account rotation, credit-based usage limits, and comprehensive activity tracking. The system can now handle multiple users scraping simultaneously using a pool of Instagram accounts.
+
+### New Features
+
+#### 1. Instagram Account Pool & Rotation
+- **Multiple Instagram Accounts**: System maintains a pool of Instagram accounts for scraping
+- **Intelligent Rotation**: Automatically selects the least-used Instagram account for each job
+- **Usage Tracking**: Tracks daily and lifetime usage statistics per account
+- **Health Monitoring**: Monitors cookie freshness and account status
+
+#### 2. Credit System
+- **Daily Quotas**: Each user has a configurable daily credit limit (default: 2000 reels)
+- **1 Credit = 1 Reel**: Credits are consumed for each successfully scraped reel
+- **Automatic Reset**: Credits reset daily at midnight
+- **Admin Control**: Admins can set custom limits per user
+
+#### 3. Activity Logging
+- **Comprehensive Logging**: All scraping events, account rotations, and admin actions are logged
+- **Debugging**: Detailed logs help troubleshoot issues
+- **Analytics**: Track usage patterns and system health
+
+#### 4. Database Enhancements
+- **New Tables**: `instagram_accounts`, `api_keys`, `admin_users`, `activity_logs`
+- **Enhanced Tracking**: Jobs and reels now linked to Instagram accounts used
+- **Better Analytics**: More detailed usage tracking
+
+### Database Schema Changes
+
+#### New Tables
+
+**instagram_accounts** - Pool of Instagram accounts
+- id, username, email, password
+- cookies, cookie_string, x_csrf_token
+- is_active, is_paused
+- daily_scrape_count, total_scrapes, success_count, failure_count
+- Usage tracking timestamps
+
+**api_keys** - Authentication for remote cookie updates
+- id, key_name, api_key (hashed)
+- is_active, permissions
+- last_used_at
+
+**admin_users** - Admin panel authentication
+- id, username, email, password_hash
+- is_active, last_login
+
+**activity_logs** - Event logging
+- id, event_type, user_id, instagram_account_id, job_id
+- details (JSONB), created_at
+
+#### Modified Tables
+
+**users** - Added credit system fields
+- daily_credit_limit (default: 2000)
+- credits_used_today
+- last_credit_reset_date
+
+**scraping_jobs** - Added Instagram account tracking
+- instagram_account_id (which account was used)
+- credits_consumed (total credits used by job)
+
+**scraped_reels** - Added Instagram account tracking
+- instagram_account_id
+
+### New Backend Modules
+
+#### [account_rotation.py](Backend/account_rotation.py)
+Handles intelligent account selection and rotation.
+
+**Key Functions**:
+- `get_least_used_account()` - Select least-used active account
+- `increment_account_usage()` - Update usage statistics
+- `reset_daily_counts()` - Reset counters at midnight
+- `mark_account_failed()` - Track failures and pause if needed
+- `get_account_stats()` - Get account statistics
+
+**Usage**:
+```python
+from account_rotation import get_least_used_account, increment_account_usage
+
+# Get account for scraping
+account = get_least_used_account(db)
+
+# After scraping
+increment_account_usage(db, account.id, reels_scraped=20, success=True)
+```
+
+#### [credit_system.py](Backend/credit_system.py)
+Manages user credit quotas and consumption.
+
+**Key Functions**:
+- `check_user_credits()` - Validate if user has enough credits
+- `deduct_credits()` - Consume credits after scraping
+- `reset_all_daily_credits()` - Reset all users at midnight
+- `get_user_credit_summary()` - Get credit info for user
+- `update_user_credit_limit()` - Admin function to change limits
+
+**Usage**:
+```python
+from credit_system import check_user_credits, deduct_credits
+
+# Before scraping
+if check_user_credits(db, user_id, required_credits=20):
+    # Scrape reels
+    deduct_credits(db, user_id, 20)
+else:
+    raise InsufficientCreditsError("Not enough credits")
+```
+
+### Database Migration
+
+**Location**: `Backend/migrations/001_multi_user_system.sql`
+
+**How to Run**:
+```bash
+# Option 1: Using psql
+psql -U scraper_user -d instagram_scraper -f Backend/migrations/001_multi_user_system.sql
+
+# Option 2: Using pgAdmin
+# Open pgAdmin → Query Tool → Load and execute the SQL file
+```
+
+**What it does**:
+1. Creates 4 new tables
+2. Adds credit fields to users table
+3. Adds Instagram account tracking to jobs and reels
+4. Creates indexes for performance
+5. Adds utility views for monitoring
+6. Creates triggers for auto-updates
+7. Inserts default admin user (username: admin, password: admin123)
+
+### Testing Phase 1
+
+**Test Script**: `Backend/test_phase1.py`
+
+**Run Tests**:
+```bash
+cd Backend
+python test_phase1.py
+```
+
+**Tests Include**:
+1. Database connection
+2. Table existence (all 8 tables)
+3. New columns in modified tables
+4. Instagram account CRUD operations
+5. Account rotation logic
+6. Credit system functionality
+7. Activity logging
+8. API key management
+9. Admin user management
+
+**Expected Output**:
+```
+╔════════════════════════════════════════════════════════╗
+║               PHASE 1 TEST SUITE                       ║
+╚════════════════════════════════════════════════════════╝
+
+TEST 1: Database Connection
+✓ Database connection successful
+
+TEST 2: Table Existence
+✓ Table 'users' exists
+✓ Table 'instagram_accounts' exists
+...
+
+TEST SUMMARY
+Tests Passed: 9/9 (100.0%)
+✓ All tests PASSED! Phase 1 implementation is working correctly.
+```
+
+### Setup Instructions
+
+#### Step 1: Install New Dependencies
+```bash
+cd Backend
+pip install -r requirements.txt
+```
+
+New dependency: `APScheduler==3.10.4` (for daily resets)
+
+#### Step 2: Run Database Migration
+```bash
+psql -U scraper_user -d instagram_scraper -f migrations/001_multi_user_system.sql
+```
+
+#### Step 3: Verify Migration
+```bash
+python test_phase1.py
+```
+
+#### Step 4: Add Instagram Accounts to Pool
+```python
+# Using Python shell
+from database import SessionLocal
+from crud import create_instagram_account
+
+db = SessionLocal()
+
+# Add your Instagram accounts
+account1 = create_instagram_account(
+    db=db,
+    username="insta_account_1",
+    email="account1@gmail.com",
+    password="your_password_here"
+)
+
+account2 = create_instagram_account(
+    db=db,
+    username="insta_account_2",
+    email="account2@gmail.com",
+    password="your_password_here"
+)
+
+db.close()
+```
+
+#### Step 5: Update Existing Users (Optional)
+All existing users automatically get:
+- `daily_credit_limit` = 2000
+- `credits_used_today` = 0
+- `last_credit_reset_date` = current date
+
+No manual updates needed!
+
+### How It Works
+
+#### Scraping Flow with Account Rotation
+
+1. **User makes scrape request** (e.g., 20 reels)
+2. **System checks credits**: Does user have 20 credits available?
+   - ✅ Yes → Continue
+   - ❌ No → Return "Insufficient credits" error
+3. **System selects Instagram account**: Get least-used active account from pool
+4. **Scraping job created**: Links user, Instagram account, and job
+5. **Reels scraped**: Using selected Instagram account's cookies
+6. **Credits deducted**: 1 credit per successfully scraped reel
+7. **Usage updated**: Instagram account's daily_scrape_count incremented
+8. **Activity logged**: Event stored in activity_logs table
+
+#### Account Selection Algorithm
+
+```
+SELECT * FROM instagram_accounts
+WHERE is_active = TRUE AND is_paused = FALSE
+ORDER BY daily_scrape_count ASC, last_used_at ASC NULLS FIRST
+LIMIT 1
+```
+
+This ensures:
+- Only active, non-paused accounts are used
+- Least-used account selected first
+- Accounts never used get priority
+
+#### Credit Reset (Midnight Job)
+
+- Runs daily at 00:00 server time
+- Resets `credits_used_today` = 0 for all users
+- Resets `daily_scrape_count` = 0 for all Instagram accounts
+- Updates `last_reset_date` to current date
+- Logged in activity_logs
+
+### Configuration
+
+#### Modify User Credit Limits
+```python
+from credit_system import update_user_credit_limit
+
+# Give user 5000 credits per day
+update_user_credit_limit(db, user_id=1, new_limit=5000)
+```
+
+#### Pause/Resume Instagram Accounts
+```python
+from account_rotation import pause_account, resume_account
+
+# Temporarily disable an account
+pause_account(db, account_id=1)
+
+# Re-enable it
+resume_account(db, account_id=1)
+```
+
+### Monitoring & Analytics
+
+#### View Instagram Account Stats
+```python
+from account_rotation import get_all_account_stats
+
+stats = get_all_account_stats(db)
+for account in stats:
+    print(f"{account['username']}: {account['daily_scrape_count']} scrapes today")
+    print(f"  Success rate: {account['success_rate']}%")
+    print(f"  Cookie health: {account['cookie_health']}")
+```
+
+#### View User Credit Usage
+```python
+from credit_system import get_user_credit_summary
+
+summary = get_user_credit_summary(db, user_id=1)
+print(f"Credits: {summary['remaining']}/{summary['daily_limit']}")
+print(f"Usage: {summary['usage_percent']}%")
+```
+
+#### View Activity Logs
+```python
+from crud import get_activity_logs
+
+# Get recent scrape successes
+logs = get_activity_logs(db, event_type="scrape_success", limit=10)
+
+# Get logs for specific user
+user_logs = get_activity_logs(db, user_id=1, limit=20)
+```
+
+### Next Steps: Phase 2
+
+Phase 2 will add:
+- Admin panel web UI
+- Cookie update API endpoints
+- Remote cookie updater script
+- Enhanced scraping endpoints with rotation
+- Daily reset scheduler
+
+**See**: [Implementation Plan](https://claude.com/plans/distributed-spinning-tarjan.md)
+
+### Troubleshooting Phase 1
+
+#### "Table already exists" errors
+The migration uses `CREATE TABLE IF NOT EXISTS`, so it's safe to run multiple times.
+
+#### Credits not resetting
+Check if the daily reset job is running. For now, manually reset:
+```python
+from credit_system import reset_all_daily_credits
+reset_all_daily_credits(db)
+```
+
+#### No Instagram accounts available
+Add Instagram accounts to the pool:
+```python
+create_instagram_account(db, username="...", email="...", password="...")
+```
+
+#### Account rotation not working
+Check account status:
+```python
+accounts = get_all_instagram_accounts(db)
+for acc in accounts:
+    print(f"{acc.username}: active={acc.is_active}, paused={acc.is_paused}")
+```
+
+---
+
 ## 🤝 Contributing
 
 When modifying the code:
