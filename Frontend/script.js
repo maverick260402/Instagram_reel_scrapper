@@ -57,6 +57,9 @@ const progressText = document.getElementById('progressText');
 const statTotalUsernames = document.getElementById('statTotalUsernames');
 const statReelsCount = document.getElementById('statReelsCount');
 const statStatus = document.getElementById('statStatus');
+const statCredits = document.getElementById('statCredits');
+const statCreditsProgress = document.getElementById('statCreditsProgress');
+const statCreditsRemaining = document.getElementById('statCreditsRemaining');
 const activityList = document.getElementById('activityList');
 
 // Navigation elements
@@ -525,6 +528,9 @@ async function pollJobStatus(backendJobId, localJobId) {
                     addActivity(`Scraping completed successfully`);
                     showNotification('Scraping completed successfully!', 'success');
 
+                    // Refresh credit info
+                    loadCreditInfo();
+
                     // Re-enable inputs
                     addUsernameBtn.disabled = false;
                     addMultipleBtn.disabled = false;
@@ -956,5 +962,72 @@ window.addEventListener('unhandledrejection', (e) => {
 
 // Make removeUsername available globally
 window.removeUsername = removeUsername;
+
+// ==================== Credit Information ====================
+
+async function loadCreditInfo() {
+    try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            console.warn('⚠️ No access token found, skipping credit load');
+            return;
+        }
+
+        console.log('📊 Loading credit info...');
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const user = await response.json();
+            console.log('✓ Credit info loaded:', {
+                used: user.credits_used_today,
+                limit: user.daily_credit_limit,
+                remaining: user.daily_credit_limit - user.credits_used_today
+            });
+            updateCreditDisplay(user);
+        } else {
+            const errorText = await response.text();
+            console.error('❌ Failed to load credit info:', response.status, errorText);
+        }
+    } catch (error) {
+        console.error('❌ Exception loading credit info:', error);
+    }
+}
+
+function updateCreditDisplay(user) {
+    const creditsUsed = user.credits_used_today || 0;
+    const creditLimit = user.daily_credit_limit || 2000;
+    const creditsRemaining = creditLimit - creditsUsed;
+    const usagePercent = creditLimit > 0 ? (creditsUsed / creditLimit) * 100 : 0;
+
+    // Update text values
+    statCredits.textContent = `${creditsUsed} / ${creditLimit}`;
+    statCreditsRemaining.textContent = `${creditsRemaining} left`;
+
+    // Update progress bar
+    statCreditsProgress.style.width = `${usagePercent}%`;
+
+    // Apply warning/danger colors based on usage
+    statCreditsProgress.classList.remove('warning', 'danger');
+    statCreditsRemaining.classList.remove('warning', 'danger');
+
+    if (usagePercent >= 90) {
+        statCreditsProgress.classList.add('danger');
+        statCreditsRemaining.classList.add('danger');
+    } else if (usagePercent >= 75) {
+        statCreditsProgress.classList.add('warning');
+        statCreditsRemaining.classList.add('warning');
+    }
+}
+
+// Load credit info on page load
+loadCreditInfo();
+
+// Refresh credit info every 30 seconds
+setInterval(loadCreditInfo, 30000);
 
 console.log('✅ Application initialized successfully');

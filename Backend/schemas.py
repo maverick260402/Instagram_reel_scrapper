@@ -31,6 +31,8 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     created_at: datetime
+    daily_credit_limit: int
+    credits_used_today: int
 
     class Config:
         from_attributes = True

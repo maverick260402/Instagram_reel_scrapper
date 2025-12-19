@@ -35,6 +35,7 @@ from auth import get_current_user, authenticate_user, create_access_token, hash_
 from account_rotation import get_least_used_account, increment_account_usage, NoAccountsAvailableError
 from credit_system import validate_scrape_request, deduct_credits, InsufficientCreditsError
 from scheduler import start_scheduler, stop_scheduler
+import admin_routes
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -68,6 +69,9 @@ app.add_middleware(
 frontend_path = Path(__file__).parent.parent / "Frontend"
 if frontend_path.exists():
     app.mount("/static", StaticFiles(directory=str(frontend_path)), name="static")
+
+# Include routers
+app.include_router(admin_routes.router)
 
 
 # ==================== Startup/Shutdown Events ====================

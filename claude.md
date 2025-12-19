@@ -1405,16 +1405,399 @@ db.close()
 
 **Prevention**: Always verify new Instagram accounts have valid cookies before activating them. Test cookies are for development only!
 
-### Next Steps: Phase 3
+---
 
-Phase 3 will add:
-- Admin panel web UI
-  - User management interface
-  - Instagram account management
-  - Activity logs viewer
-  - System statistics dashboard
-- Real-time notifications
-- Advanced analytics
+## 🚀 Phase 3: Admin Panel & Advanced Features (NEW)
+
+**Status**: ✅ Implemented
+**Date**: December 18, 2025
+
+### Overview
+
+Phase 3 adds a comprehensive admin panel with web-based user management, Instagram account monitoring, activity logs viewer, system statistics dashboard, and real-time notifications.
+
+### New Features
+
+#### 1. Admin Panel Web UI
+- **Modern Dark Theme**: Matches existing design language (black/purple/white)
+- **Responsive Layout**: Works on desktop and mobile devices
+- **Sidebar Navigation**: Easy access to all admin features
+- **Real-time Updates**: Notification system for live events
+
+#### 2. User Management Interface
+- **User List**: View all users with credit usage and status
+- **Search & Filter**: Find users by email/username, filter by status
+- **Edit Users**: Modify credit limits and activate/deactivate accounts
+- **User Details**: View detailed statistics and recent jobs
+- **Usage Tracking**: Visual progress bars for credit consumption
+
+#### 3. Instagram Account Management
+- **Account Pool Monitoring**: View all Instagram accounts
+- **Cookie Health Status**: Visual indicators for cookie freshness
+- **Usage Statistics**: Daily and lifetime scrape counts
+- **Success Rates**: Track account performance
+- **Filter by Status**: Active, paused, healthy cookies, expired cookies
+
+#### 4. Activity Logs Viewer
+- **Comprehensive Logging**: All system events in one place
+- **Advanced Filtering**: By date range, event type, user, account
+- **Export to CSV**: Download logs for external analysis
+- **Real-time Updates**: See events as they happen
+
+#### 5. System Statistics Dashboard
+- **Overview Cards**: Total users, accounts, today's reels, success rate
+- **Daily Trends Chart**: Reels scraped and active users over time
+- **Credit Usage Chart**: Top consumers visualization
+- **Account Distribution**: Pie chart of account usage
+- **Hourly Patterns**: Identify peak usage times
+- **Success/Failure Rates**: Donut chart visualization
+
+#### 6. Performance Optimizations
+- **Database Indexes**: Faster queries on activity_logs, scraped_reels, scraping_jobs
+- **Database Views**: Precomputed statistics for quick access
+- **Efficient Queries**: Optimized SQL for large datasets
+
+### Admin Panel Structure
+
+```
+Frontend/admin/
+├── index.html           # Main admin dashboard page
+├── admin.css            # Admin panel styles (dark theme)
+├── admin.js             # Main controller and navigation
+├── components/
+│   ├── users.js         # User management component
+│   ├── accounts.js      # Instagram account management
+│   ├── logs.js          # Activity logs viewer
+│   └── stats.js         # Statistics dashboard
+└── utils/
+    ├── api.js           # API client for backend communication
+    └── charts.js        # Chart.js helper utilities
+```
+
+### Setup Instructions (Phase 3)
+
+#### Step 1: Run Database Migration
+
+The migration adds performance indexes and useful database views:
+
+**Option 1: Using Python script**
+```bash
+cd Backend
+python run_migration.py migrations/002_phase3_indexes_views.sql
+```
+
+**Option 2: Using psql directly**
+```bash
+psql -U scraper_user -d instagram_scraper -f Backend/migrations/002_phase3_indexes_views.sql
+```
+
+This creates:
+- 10 indexes for faster queries
+- 6 database views for complex statistics
+- Performance optimizations for large datasets
+
+#### Step 2: Create Admin User
+
+Admin users are separate from regular users and have special permissions:
+
+```python
+from database import SessionLocal
+from models import AdminUser
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+db = SessionLocal()
+
+# Create admin user
+admin = AdminUser(
+    username="admin",
+    email="admin@example.com",
+    password_hash=pwd_context.hash("your_secure_password"),
+    is_active=True
+)
+db.add(admin)
+db.commit()
+db.close()
+```
+
+**Default Admin** (from Phase 1 migration):
+- Username: `admin`
+- Email: `admin@example.com`
+- Password: `admin123`
+- ⚠️ **Change this password immediately for production!**
+
+#### Step 3: Access Admin Panel
+
+1. Start the server:
+   ```bash
+   cd Backend
+   python app.py
+   ```
+
+2. Navigate to admin panel:
+   ```
+   http://localhost:8080/static/admin/index.html
+   ```
+
+3. Login with admin credentials
+
+### Admin Panel Pages
+
+#### Dashboard Page
+
+**Overview Cards:**
+- Total Users (active/inactive count)
+- Instagram Accounts (active/paused count)
+- Today's Reels (jobs completed count)
+- Success Rate (percentage with total jobs)
+
+**Charts:**
+- Daily Scraping Trends (line chart, last 7/14/30 days)
+- Top Credit Consumers (bar chart)
+
+**Recent Activity:**
+- Last 10 system events with icons and timestamps
+
+#### User Management Page
+
+**Features:**
+- Search users by email/username
+- Filter by status (all/active/inactive)
+- View user details (jobs, reels, success rate)
+- Edit credit limits
+- Activate/deactivate users
+
+**User Table Columns:**
+- Email, Username
+- Credits (used/limit with progress bar)
+- Usage percentage
+- Status badge
+- Created date
+- Actions (Edit, Details)
+
+#### Instagram Accounts Page
+
+**Features:**
+- Filter by status (all/active/paused/healthy/expired)
+- Cookie health monitoring
+- Usage statistics per account
+- Success rate tracking
+
+**Account Table Columns:**
+- Username, Email
+- Status (active/paused/inactive badge)
+- Cookie Health (healthy/expiring/expired with age)
+- Daily Usage count
+- Total Scrapes count
+- Success Rate (with progress bar)
+- Last Used timestamp
+
+#### Activity Logs Page
+
+**Features:**
+- Date range filter (start/end date pickers)
+- Event type filter (scrape_started, scrape_success, scrape_failed, etc.)
+- Export logs to CSV
+- Detailed log information
+
+**Log Table Columns:**
+- Timestamp
+- Event Type (with colored badge)
+- User ID
+- Instagram Account ID
+- Job ID
+- Details (JSON formatted)
+
+#### Statistics Page
+
+**Advanced Charts:**
+- Account Usage Distribution (pie chart)
+- Hourly Usage Pattern (bar chart showing peak hours)
+- Success vs Failure Rates (donut chart)
+
+**Time Range Filter:**
+- Last 7/14/30/90 days
+
+### Database Views Added
+
+#### `v_daily_stats`
+Aggregates daily scraping metrics:
+- Date, total reels, active users, accounts used
+- Average plays, likes, comments
+
+#### `v_user_summary`
+User statistics with credit usage:
+- User info, credit limits, usage percent
+- Total jobs, successful jobs, total reels scraped
+
+#### `v_instagram_account_health`
+Account status and cookie health:
+- Account info, status flags
+- Success rate calculation
+- Cookie health status (HEALTHY/EXPIRING_SOON/EXPIRED/NO_COOKIES)
+- Cookie age in days
+
+#### `v_recent_activity`
+Recent system activity with joined details:
+- Activity log with user/account usernames
+- Job IDs and event details
+
+#### `v_job_performance`
+Job performance metrics:
+- Job details with user and account info
+- Duration in seconds
+- Reels scraped and credits consumed
+
+#### `v_hourly_usage_pattern`
+Usage patterns by hour:
+- Hour of day (0-23)
+- Total reels, unique users, average plays
+
+### API Endpoints (Phase 3)
+
+All endpoints require admin authentication (`Authorization: Bearer <token>`)
+
+#### Authentication
+```
+POST /api/admin/auth/login
+GET  /api/admin/auth/me
+```
+
+#### User Management
+```
+GET    /api/admin/users                    # List users with filters
+GET    /api/admin/users/{user_id}          # User details
+PUT    /api/admin/users/{user_id}          # Update user
+DELETE /api/admin/users/{user_id}          # Deactivate user
+GET    /api/admin/users/{user_id}/stats    # User statistics
+```
+
+#### Activity Logs
+```
+GET /api/admin/logs              # List logs with filters
+GET /api/admin/logs/stats        # Log statistics
+```
+
+#### System Statistics
+```
+GET /api/admin/stats/overview       # System overview
+GET /api/admin/stats/usage          # Usage over time
+GET /api/admin/stats/performance    # Performance metrics
+```
+
+### Configuration
+
+#### Admin Panel Settings
+
+No additional configuration needed! The admin panel uses the same authentication system as the main app.
+
+#### Customize Chart Time Ranges
+
+Edit `Frontend/admin/components/stats.js`:
+```javascript
+// Change default days for charts
+currentDays: 7  // Change to 14, 30, etc.
+```
+
+#### Customize Notification Polling Interval
+
+Edit `Frontend/admin/admin.js`:
+```javascript
+// Default: 30 seconds
+setInterval(() => {
+    this.loadNotifications();
+}, 30000);  // Change to desired interval in milliseconds
+```
+
+### Using the Admin Panel
+
+#### Managing Users
+
+1. **View all users**: Navigate to "Users" page
+2. **Search for user**: Type email/username in search box
+3. **Edit credit limit**:
+   - Click "Edit" button next to user
+   - Modify "Daily Credit Limit" field
+   - Click "Save Changes"
+4. **Deactivate user**:
+   - Click "Edit" button
+   - Uncheck "Active" checkbox
+   - Click "Save Changes"
+
+#### Monitoring Instagram Accounts
+
+1. **View account health**: Navigate to "Instagram Accounts" page
+2. **Check cookie status**: Look at "Cookie Health" column
+   - 🟢 Healthy (0-5 days old)
+   - 🟡 Expiring (5-7 days old)
+   - 🔴 Expired (>7 days old)
+3. **Filter accounts**: Use status dropdown
+   - Active: Only active, non-paused accounts
+   - Paused: Only paused accounts
+   - Healthy: Accounts with fresh cookies (0-5 days)
+   - Expired: Accounts needing cookie refresh (>7 days)
+
+#### Viewing Activity Logs
+
+1. **Set date range**: Use start/end date pickers (default: last 7 days)
+2. **Filter by event type**: Select from dropdown
+3. **Export logs**: Click "Export CSV" button
+4. **View details**: Hover over details column to see full JSON
+
+#### Analyzing Statistics
+
+1. **Dashboard overview**: View real-time metrics on Dashboard page
+2. **Advanced statistics**: Navigate to "Statistics" page
+3. **Change time range**: Use dropdown filter (7/14/30/90 days)
+4. **Identify trends**: Look at daily trends chart
+5. **Find top users**: Check credit usage bar chart
+6. **Monitor success rate**: View donut chart
+
+### Troubleshooting Phase 3
+
+#### Admin panel won't load
+
+**Symptom**: Blank page or "Failed to load profile" error
+
+**Solutions**:
+1. Check if backend is running: `python app.py`
+2. Verify admin user exists in database
+3. Check browser console for errors
+4. Clear browser cache and localStorage
+
+#### "Invalid or inactive API key" when accessing admin endpoints
+
+**Cause**: Admin authentication not working
+
+**Solutions**:
+1. Login again at `/static/login.html`
+2. Check if admin user exists in `admin_users` table
+3. Verify token is being sent in Authorization header
+
+#### Charts not displaying
+
+**Symptom**: Empty chart areas
+
+**Solutions**:
+1. Check browser console for Chart.js errors
+2. Verify Chart.js CDN is accessible: `https://cdn.jsdelivr.net/npm/chart.js`
+3. Check if data endpoints are returning valid JSON
+4. Inspect network tab for failed API calls
+
+#### Database migration fails
+
+**Error**: `column "created_at" does not exist`
+
+**Solution**: Migration may have syntax issues. Run migrations manually:
+```sql
+-- Connect to database
+psql -U scraper_user -d instagram_scraper
+
+-- Create indexes manually
+CREATE INDEX idx_activity_logs_event_type ON activity_logs(event_type);
+CREATE INDEX idx_scraped_reels_scraped_at ON scraped_reels(scraped_at DESC);
+-- ... etc
+```
 
 ---
 
