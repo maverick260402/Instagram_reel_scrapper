@@ -1,60 +1,286 @@
-# Instagram Reel Scraper
+# Instagram Reel Scraper - Complete Documentation
 
-A full-stack web application for scraping Instagram reel metadata with a modern, dark-themed user interface.
+**Version:** 3.0 (Phase 3 Complete)
+**Last Updated:** December 2025
+**Status:** Production Ready ✅
+
+---
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
+- [Phase 1: Multi-User System](#phase-1-multi-user-system)
+- [Phase 2: Enhanced API & Cookie Management](#phase-2-enhanced-api--cookie-management)
+- [Phase 3: Admin Panel](#phase-3-admin-panel)
 - [API Documentation](#api-documentation)
-- [Frontend Guide](#frontend-guide)
+- [User Dashboard Guide](#user-dashboard-guide)
+- [Admin Panel Guide](#admin-panel-guide)
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
+- [Security](#security)
+- [Contributing](#contributing)
+
+---
 
 ## 🎯 Overview
 
-This application allows users to scrape Instagram reel metadata from multiple accounts with a sleek, user-friendly interface. The backend uses FastAPI for high performance, while the frontend provides an intuitive experience with a black, purple, and white color scheme.
+Instagram Reel Scraper is a full-stack web application designed for scraping Instagram reel metadata with enterprise-grade features including multi-user support, credit-based usage limits, intelligent Instagram account rotation, and comprehensive admin controls.
+
+### What It Does
+
+- Scrapes Instagram reel metadata (plays, likes, comments, URLs)
+- Manages multiple users with individual credit quotas
+- Rotates Instagram accounts automatically for optimal performance
+- Tracks usage statistics and generates analytics
+- Provides admin dashboard for system monitoring
+
+### Use Cases
+
+- Social media analytics and research
+- Content performance tracking
+- Competitive analysis
+- Educational data science projects
+
+---
 
 ## ✨ Features
 
-### Backend Features
-- **FastAPI Server** - High-performance async API
-- **Pagination Support** - Efficiently fetch large numbers of reels
-- **Multi-User Scraping** - Process multiple Instagram accounts in one request
-- **Data Export** - Automatically saves data as JSON and CSV
-- **Error Handling** - Robust error management with detailed feedback
-- **Rate Limiting Protection** - Built-in delays to avoid Instagram rate limits
+### User Features
+- **JWT Authentication** - Secure login with 7-day token expiration
+- **Group Management** - Organize Instagram usernames into reusable groups
+- **Credit System** - Daily quota management (default: 2000 reels/day)
+- **Job Tracking** - Real-time progress monitoring with history
+- **Analytics Dashboard** - View and filter scraped data
+- **Data Export** - Download data as CSV
 
-### Frontend Features
-- **Dual Input Modes**:
-  - Single username input with "Add" button
-  - Bulk username input via textarea (one per line)
-- **Interactive Username Management** - Add, view, and remove usernames dynamically
-- **Configurable Reel Count** - Specify how many reels to scrape per account
-- **Real-time Progress Tracking** - Visual progress bar during scraping
-- **Results Dashboard** - Detailed success/failure status for each account
-- **Dark Theme UI** - Black background, white text, purple accents
-- **Responsive Design** - Works on desktop and mobile devices
+### Admin Features
+- **User Management** - View, edit, activate/deactivate users
+- **Instagram Account Pool** - Monitor cookie health and usage
+- **Activity Logs** - Comprehensive event logging with filters
+- **System Statistics** - Charts and metrics for system health
+- **Credit Control** - Adjust user limits dynamically
+
+### Technical Features
+- **Account Rotation** - Intelligent selection of least-used Instagram account
+- **Cookie Management** - Automated cookie refresh every 5 days
+- **Daily Resets** - Automatic credit and counter reset at midnight
+- **Rate Limiting** - Built-in protection against Instagram blocks
+- **Database Views** - Optimized queries for analytics
+
+---
 
 ## 🛠 Tech Stack
 
 ### Backend
-- **FastAPI** - Modern Python web framework
-- **Uvicorn** - ASGI server
-- **Requests** - HTTP library for API calls
-- **Pandas** - Data manipulation and CSV export
-- **Zstandard** - Compression handling
-- **Pydantic** - Data validation
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **FastAPI** | 0.109.0 | Modern async Python web framework |
+| **PostgreSQL** | 15+ | Relational database |
+| **SQLAlchemy** | 2.0.36 | ORM for database operations |
+| **Uvicorn** | 0.27.0 | ASGI server |
+| **JWT** | python-jose 3.3.0 | Secure authentication |
+| **Bcrypt** | passlib 1.7.4 | Password hashing |
+| **Pandas** | 2.3.3 | Data manipulation |
+| **APScheduler** | 3.10.4 | Daily reset automation |
+| **Playwright** | Latest | Cookie extraction (optional) |
 
 ### Frontend
-- **Vanilla JavaScript** - No framework dependencies
-- **CSS3** - Modern styling with animations
-- **HTML5** - Semantic markup
-- **Fetch API** - Backend communication
+| Technology | Purpose |
+|------------|---------|
+| **Vanilla JavaScript** | No framework dependencies |
+| **HTML5/CSS3** | Modern responsive design |
+| **Fetch API** | Backend communication |
+| **Chart.js** | Admin panel visualizations |
+
+### Database
+- **PostgreSQL 15+** - ACID compliance, JSONB support
+- **8 Tables** - Normalized schema with foreign keys
+- **9 Views** - Precomputed statistics
+- **Indexes** - Optimized for analytics queries
+
+---
+
+## 🚀 Quick Start
+
+Get up and running in 10 minutes!
+
+### Prerequisites
+- Python 3.8+
+- Docker Desktop (for PostgreSQL)
+
+### Steps
+
+```bash
+# 1. Start PostgreSQL
+docker-compose up -d
+
+# 2. Navigate to Backend
+cd Backend
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Copy environment file
+cp .env.example .env
+
+# 5. Generate secret key
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))" >> .env
+
+# 6. Run Phase 1 migration
+psql -U scraper_user -d instagram_scraper -f migrations/001_multi_user_system.sql
+
+# 7. Run Phase 3 migration
+psql -U scraper_user -d instagram_scraper -f migrations/002_phase3_indexes_views.sql
+
+# 8. Start the server
+python app.py
+
+# 9. Open browser
+# Navigate to: http://localhost:8080
+```
+
+### First Use
+
+1. Click **"Sign Up"**
+2. Create account (email, username, password)
+3. Login with credentials
+4. Start scraping!
+
+---
+
+## 📦 Installation
+
+### Detailed Installation Steps
+
+#### 1. Clone Repository
+
+```bash
+git clone <your-repository-url>
+cd Instagram_reel_scrapper
+```
+
+#### 2. Set Up PostgreSQL
+
+**Option A: Docker Compose (Recommended)**
+
+Create `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: instagram_scraper_db
+    environment:
+      POSTGRES_USER: scraper_user
+      POSTGRES_PASSWORD: scraper_password_123
+      POSTGRES_DB: instagram_scraper
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
+
+Start database:
+
+```bash
+docker-compose up -d
+```
+
+**Option B: Docker CLI**
+
+```bash
+docker run -d \
+  --name instagram_scraper_db \
+  -e POSTGRES_USER=scraper_user \
+  -e POSTGRES_PASSWORD=scraper_password_123 \
+  -e POSTGRES_DB=instagram_scraper \
+  -p 5432:5432 \
+  -v postgres_data:/var/lib/postgresql/data \
+  postgres:15-alpine
+```
+
+#### 3. Install Python Dependencies
+
+```bash
+cd Backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### 4. Configure Environment
+
+```bash
+# Copy template
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```env
+# Database
+DATABASE_URL=postgresql://scraper_user:scraper_password_123@localhost:5432/instagram_scraper
+
+# JWT (generate with: openssl rand -hex 32)
+SECRET_KEY=your-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+
+# Settings
+MAX_GROUPS_PER_USER=100
+ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+```
+
+#### 5. Run Database Migrations
+
+```bash
+# Phase 1: Multi-user system
+psql -U scraper_user -d instagram_scraper -f migrations/001_multi_user_system.sql
+
+# Phase 3: Indexes and views
+psql -U scraper_user -d instagram_scraper -f migrations/002_phase3_indexes_views.sql
+```
+
+#### 6. Verify Installation
+
+```bash
+cd Backend
+python test_phase1.py
+python test_phase2.py
+```
+
+All tests should pass ✅
+
+#### 7. Start Application
+
+```bash
+python app.py
+```
+
+Access at: http://localhost:8080
+
+---
 
 ## 📁 Project Structure
 
@@ -62,356 +288,344 @@ This application allows users to scrape Instagram reel metadata from multiple ac
 Instagram_reel_scrapper/
 ├── Backend/
 │   ├── Scripts/
-│   │   └── pipeline.py          # Core scraping logic
-│   ├── app.py                    # FastAPI application
-│   ├── requirements.txt          # Python dependencies
-│   └── output_json/              # Generated data (created at runtime)
-│       └── {username}/
-│           ├── meta_data.json    # Raw Instagram API response
-│           └── scrapped_data.csv # Extracted reel metadata
+│   │   ├── pipeline.py                  # Core scraping logic
+│   │   └── remote_cookie_updater.py     # Automated cookie refresh
+│   ├── migrations/
+│   │   ├── 001_multi_user_system.sql    # Phase 1 database setup
+│   │   └── 002_phase3_indexes_views.sql # Phase 3 optimizations
+│   ├── app.py                            # FastAPI application
+│   ├── auth.py                           # JWT authentication
+│   ├── config.py                         # Configuration management
+│   ├── database.py                       # Database connection
+│   ├── models.py                         # SQLAlchemy models
+│   ├── schemas.py                        # Pydantic validation
+│   ├── crud.py                           # Database operations
+│   ├── account_rotation.py               # Instagram account selection
+│   ├── credit_system.py                  # User credit management
+│   ├── scheduler.py                      # Daily reset automation
+│   ├── generate_api_key.py               # API key management utility
+│   ├── test_phase1.py                    # Phase 1 tests
+│   ├── test_phase2.py                    # Phase 2 tests
+│   ├── requirements.txt                  # Python dependencies
+│   ├── .env                              # Environment variables (create this)
+│   ├── .env.example                      # Environment template
+│   └── output_json/                      # Scraped data (generated)
 │
-└── Frontend/
-    ├── index.html                # Main application page
-    ├── styles.css                # UI styling
-    └── script.js                 # Frontend logic
+├── Frontend/
+│   ├── index.html                        # User dashboard
+│   ├── login.html                        # Login/signup page
+│   ├── script.js                         # Main application logic
+│   ├── auth.js                           # Authentication handler
+│   ├── groups.js                         # Group management
+│   ├── analytics.js                      # Analytics dashboard
+│   ├── styles.css                        # User dashboard styles
+│   └── admin/
+│       ├── index.html                    # Admin panel main page
+│       ├── login.html                    # Admin login page
+│       ├── admin.css                     # Admin panel styles
+│       ├── admin.js                      # Admin controller
+│       ├── components/
+│       │   ├── users.js                  # User management component
+│       │   ├── accounts.js               # Instagram account management
+│       │   ├── logs.js                   # Activity logs viewer
+│       │   └── stats.js                  # Statistics dashboard
+│       └── utils/
+│           ├── api.js                    # API client
+│           └── charts.js                 # Chart.js utilities
+│
+├── docker-compose.yml                    # PostgreSQL setup (create this)
+├── .gitignore                            # Git ignore rules
+└── DOCUMENTATION.md                      # This file
 ```
-
-## 🚀 Installation
-
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
-- Modern web browser
-
-### Step 1: Clone or Navigate to Project
-```bash
-cd "d:\ThunderBolts\Project Tres\Script_Based_Solution\Instagram_reel_scrapper"
-```
-
-### Step 2: Install Backend Dependencies
-```bash
-cd Backend
-pip install -r requirements.txt
-```
-
-### Step 3: Verify Installation
-```bash
-python -c "import fastapi, uvicorn, pandas; print('All dependencies installed!')"
-```
-
-## 📖 Usage
-
-### Starting the Application
-
-1. **Start the Backend Server**:
-   ```bash
-   cd Backend
-   python app.py
-   ```
-   The server will start on `http://localhost:8000`
-
-2. **Open the Frontend**:
-   - Open `Frontend/index.html` in your web browser
-   - Or visit `http://localhost:8000` if configured to serve frontend
-
-### Using the Web Interface
-
-#### Method 1: Single Username Entry
-1. Enter an Instagram username in the "Add Single Username" field
-2. Click the "Add" button
-3. Repeat for multiple accounts
-4. View added usernames as purple tags
-5. Remove individual usernames by clicking the "×" button
-
-#### Method 2: Bulk Username Entry
-1. Click in the "Add Multiple Usernames" textarea
-2. Enter usernames, one per line:
-   ```
-   username1
-   username2
-   username3
-   ```
-3. Click "Submit All" to add all usernames at once
-
-#### Scraping Reels
-1. Add usernames using either method
-2. Set the "Number of Reels" (default: 20)
-3. Click "Start Scraping"
-4. Monitor progress in the progress bar
-5. View results when complete
-
-### Output Files
-
-For each username, the system creates:
-- `Backend/output_json/{username}/meta_data.json` - Complete Instagram API response
-- `Backend/output_json/{username}/scrapped_data.csv` - Extracted data with columns:
-  - `pk` - Post ID
-  - `code` - Short code
-  - `play_count` - Number of plays
-  - `comment_count` - Number of comments
-  - `like_count` - Number of likes
-  - `url` - Direct URL to the reel
-
-## 🔌 API Documentation
-
-### Base URL
-```
-http://localhost:8000
-```
-
-### Endpoints
-
-#### GET `/`
-Serves the main application page.
-
-**Response**: HTML page
 
 ---
 
-#### POST `/api/scrape`
-Scrapes Instagram reels for specified usernames.
+## 🗄 Database Schema
 
-**Request Body**:
-```json
-{
-  "usernames": ["username1", "username2"],
-  "reel_count": 20
-}
-```
+**Total Tables:** 8
+**Total Views:** 9
 
-**Response**:
-```json
-{
-  "status": "completed",
-  "results": [
-    {
-      "username": "username1",
-      "status": "success",
-      "reels_scraped": 20,
-      "csv_path": "path/to/scrapped_data.csv",
-      "json_path": "path/to/meta_data.json"
-    }
-  ]
-}
-```
+### Table: users
 
-**Error Response**:
-```json
-{
-  "username": "username1",
-  "status": "failed",
-  "error": "Error message"
-}
-```
+**Purpose:** Store user accounts with credit system
 
-## 🎨 Frontend Guide
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | integer | NO | Auto | Primary key |
+| email | varchar(255) | NO | - | User email (unique) |
+| username | varchar(100) | NO | - | Display name (unique) |
+| password_hash | varchar(255) | NO | - | Bcrypt hashed password |
+| is_active | boolean | NO | - | Account status |
+| created_at | timestamp | NO | now() | Account creation time |
+| daily_credit_limit | integer | YES | 2000 | Max reels per day |
+| credits_used_today | integer | YES | 0 | Credits consumed today |
+| last_credit_reset_date | date | YES | CURRENT_DATE | Last reset date |
 
-### Color Scheme
-- **Background**: `#000000` (Black)
-- **Text**: `#FFFFFF` (White)
-- **Primary Accent**: `#9333ea` (Purple)
-- **Hover State**: `#a855f7` (Light Purple)
-- **Success**: `#10b981` (Green)
-- **Error**: `#ef4444` (Red)
-
-### Key Components
-
-#### Username Tags
-- Display added usernames as purple pill-shaped tags
-- Click "×" to remove individual usernames
-- Animated entry with slide-in effect
-
-#### Progress Bar
-- Gradient purple fill
-- Smooth width transitions
-- Percentage display when active
-
-#### Results Display
-- Color-coded status badges (green for success, red for error)
-- File paths in monospace font
-- Collapsible details per username
-
-### Customization
-
-To modify the API endpoint, edit `Frontend/script.js`:
-```javascript
-const API_URL = 'http://localhost:8000'; // Change this
-```
-
-## ⚙️ Configuration
-
-### Backend Configuration
-
-Edit `Backend/app.py` to customize:
-
-**Server Port**:
-```python
-uvicorn.run(app, host="0.0.0.0", port=8000)  # Change port here
-```
-
-**CORS Settings**:
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Restrict in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-### Scraping Configuration
-
-Edit `Backend/Scripts/pipeline.py` for:
-
-**Sleep Between Requests** (avoid rate limiting):
-```python
-fetch_reels_paginated(..., sleep_seconds=3.0)  # Adjust timing
-```
-
-**Max Reels Per Page**:
-```python
-fetch_reels_paginated(..., max_per_page=50)  # Change batch size
-```
-
-**Session Cookies**:
-Update the `cookie` field in headers with your Instagram session cookie for authenticated requests.
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-**1. "Could not find target_id" Error**
-- **Cause**: Invalid username or Instagram changed their HTML structure
-- **Solution**: Verify username exists, check if account is public, update session cookie
-
-**2. Rate Limiting / Blocked Requests**
-- **Cause**: Too many requests to Instagram
-- **Solution**: Increase `sleep_seconds` parameter, use valid session cookies
-
-**3. CORS Errors in Browser**
-- **Cause**: Frontend trying to access backend from different origin
-- **Solution**: Ensure CORS is enabled in `app.py`, or serve frontend from same server
-
-**4. Empty Results**
-- **Cause**: Private account or no reels available
-- **Solution**: Verify account has public reels, check account privacy settings
-
-**5. Server Won't Start**
-- **Cause**: Port already in use or missing dependencies
-- **Solution**:
-  ```bash
-  # Check port usage
-  netstat -ano | findstr :8000
-
-  # Reinstall dependencies
-  pip install -r requirements.txt --force-reinstall
-  ```
-
-### Debug Mode
-
-Enable FastAPI debug mode in `app.py`:
-```python
-uvicorn.run(app, host="0.0.0.0", port=8000, reload=True, log_level="debug")
-```
-
-View console logs in:
-- **Backend**: Terminal where `python app.py` is running
-- **Frontend**: Browser Developer Tools (F12) → Console tab
-
-## 📝 Notes
-
-- **Instagram Session**: For better reliability, provide a valid Instagram session cookie in the headers
-- **Rate Limits**: Instagram may rate limit requests. Adjust sleep timings as needed
-- **Data Privacy**: Be mindful of Instagram's Terms of Service when scraping data
-- **Session Expiry**: Cookies expire periodically and need to be refreshed
+**Primary Key:** id
+**Unique Constraints:** email, username
 
 ---
 
-## 🚀 Phase 1: Multi-User System (NEW)
+### Table: instagram_accounts
 
-**Status**: ✅ Implemented
-**Date**: December 2025
+**Purpose:** Pool of Instagram accounts for scraping with cookie management
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | integer | NO | Auto | Primary key |
+| username | varchar(100) | NO | - | Instagram username |
+| email | varchar(255) | NO | - | Instagram email |
+| password | varchar(255) | NO | - | Instagram password |
+| cookies | jsonb | YES | - | Full cookie object |
+| cookie_string | text | YES | - | Formatted cookie header |
+| x_csrf_token | varchar(255) | YES | - | Extracted CSRF token |
+| is_active | boolean | YES | true | Account enabled |
+| is_paused | boolean | YES | false | Temporarily disabled |
+| daily_scrape_count | integer | YES | 0 | Reels scraped today |
+| last_reset_date | date | YES | CURRENT_DATE | Last counter reset |
+| total_scrapes | integer | YES | 0 | Lifetime scrapes |
+| success_count | integer | YES | 0 | Successful scrapes |
+| failure_count | integer | YES | 0 | Failed scrapes |
+| last_used_at | timestamp | YES | - | Last usage time |
+| cookies_updated_at | timestamp | YES | - | Last cookie refresh |
+| created_at | timestamp | YES | now() | Account added |
+| updated_at | timestamp | YES | now() | Last modification |
+
+**Primary Key:** id
+**Unique Constraints:** username, email
+
+---
+
+### Table: scraping_jobs
+
+**Purpose:** Track all scraping jobs with progress and status
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | integer | NO | Auto | Primary key |
+| job_id | varchar(100) | NO | - | Unique job identifier |
+| user_id | integer | NO | - | FK to users |
+| usernames | ARRAY | NO | - | Target Instagram usernames |
+| reel_count | integer | NO | - | Reels requested per user |
+| status | varchar(50) | NO | - | running/completed/failed |
+| progress | float | NO | - | Percentage (0-100) |
+| start_time | timestamp | NO | now() | Job start time |
+| end_time | timestamp | YES | - | Job end time |
+| duration | float | YES | - | Execution time (seconds) |
+| error_message | text | YES | - | Error details if failed |
+| instagram_account_id | integer | YES | - | FK to instagram_accounts |
+| credits_consumed | integer | YES | 0 | Total credits deducted |
+
+**Primary Key:** id
+**Unique Constraints:** job_id
+**Foreign Keys:**
+- user_id → users(id)
+- instagram_account_id → instagram_accounts(id)
+
+---
+
+### Table: scraped_reels
+
+**Purpose:** Store individual reel metadata
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | integer | NO | Auto | Primary key |
+| job_id | varchar(100) | NO | - | FK to scraping_jobs |
+| user_id | integer | NO | - | FK to users |
+| instagram_username | varchar(100) | NO | - | Instagram account scraped |
+| reel_pk | varchar(100) | NO | - | Instagram reel ID |
+| reel_code | varchar(50) | YES | - | Instagram short code |
+| play_count | bigint | NO | - | Number of plays |
+| comment_count | integer | NO | - | Number of comments |
+| like_count | bigint | NO | - | Number of likes |
+| is_reel_pinned | varchar(3) | YES | - | Yes/No |
+| reel_url | text | YES | - | Direct URL to reel |
+| scraped_at | timestamp | NO | now() | Scrape timestamp |
+| raw_data | jsonb | YES | - | Full Instagram API response |
+| instagram_account_id | integer | YES | - | FK to instagram_accounts |
+
+**Primary Key:** id
+**Foreign Keys:**
+- job_id → scraping_jobs(job_id)
+- user_id → users(id)
+- instagram_account_id → instagram_accounts(id)
+
+**Indexes:**
+- idx_scraped_reels_user_id
+- idx_scraped_reels_scraped_at (DESC)
+- idx_scraped_reels_play_count
+- idx_scraped_reels_like_count
+- idx_scraped_reels_comment_count
+
+---
+
+### Table: user_groups
+
+**Purpose:** Store user-created groups of Instagram usernames
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | integer | NO | Auto | Primary key |
+| user_id | integer | NO | - | FK to users |
+| name | varchar(100) | NO | - | Group name |
+| usernames | ARRAY | NO | - | Instagram usernames |
+| created_at | timestamp | NO | now() | Group creation time |
+| updated_at | timestamp | NO | now() | Last modification |
+| last_used | timestamp | YES | - | Last loaded for scraping |
+| times_used | integer | NO | - | Usage counter |
+
+**Primary Key:** id
+**Foreign Keys:**
+- user_id → users(id)
+
+**Unique Constraints:** (user_id, name)
+
+---
+
+### Table: activity_logs
+
+**Purpose:** Comprehensive event logging
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | integer | NO | Auto | Primary key |
+| event_type | varchar(50) | NO | - | Event category |
+| user_id | integer | YES | - | FK to users (optional) |
+| instagram_account_id | integer | YES | - | FK to instagram_accounts |
+| job_id | varchar(100) | YES | - | Related job ID |
+| details | jsonb | YES | - | Additional event data |
+| created_at | timestamp | YES | now() | Event timestamp |
+
+**Primary Key:** id
+**Foreign Keys:**
+- user_id → users(id)
+- instagram_account_id → instagram_accounts(id)
+
+**Indexes:**
+- idx_activity_logs_event_type
+- idx_activity_logs_created_at (DESC)
+- idx_activity_logs_user_id
+
+**Event Types:**
+- scrape_started
+- scrape_success
+- scrape_failed
+- credits_deducted
+- credits_reset
+- cookies_updated
+- account_selected
+- admin_action
+
+---
+
+### Table: api_keys
+
+**Purpose:** API authentication for cookie updates
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | integer | NO | Auto | Primary key |
+| key_name | varchar(100) | NO | - | Descriptive name |
+| api_key | varchar(255) | NO | - | Bcrypt hashed key |
+| is_active | boolean | YES | true | Key status |
+| permissions | jsonb | YES | ["update_cookies"] | Allowed operations |
+| last_used_at | timestamp | YES | - | Last usage time |
+| created_at | timestamp | YES | now() | Key creation time |
+
+**Primary Key:** id
+**Unique Constraints:** api_key
+
+---
+
+### Table: admin_users
+
+**Purpose:** Admin panel authentication (separate from regular users)
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| id | integer | NO | Auto | Primary key |
+| username | varchar(100) | NO | - | Admin username |
+| email | varchar(255) | NO | - | Admin email |
+| password_hash | varchar(255) | NO | - | Bcrypt hashed password |
+| is_active | boolean | YES | true | Account status |
+| created_at | timestamp | YES | now() | Account creation |
+| last_login | timestamp | YES | - | Last login time |
+
+**Primary Key:** id
+**Unique Constraints:** username, email
+
+**Default Admin:**
+- Username: admin
+- Email: admin@example.com
+- Password: admin123 (CHANGE IMMEDIATELY!)
+
+---
+
+### Database Views
+
+The system includes 9 optimized views for analytics:
+
+| View Name | Purpose |
+|-----------|---------|
+| v_user_summary | User statistics with credit usage |
+| v_instagram_account_health | Cookie health and success rates |
+| v_daily_stats | Daily scraping metrics |
+| v_recent_activity | Recent events with details |
+| v_job_performance | Job duration and success rates |
+| v_hourly_usage_pattern | Usage patterns by hour |
+| v_user_credits_summary | Credit usage breakdown |
+| v_instagram_accounts_status | Account status overview |
+| v_daily_activity_summary | Daily activity aggregation |
+
+---
+
+## 🚀 Phase 1: Multi-User System
+
+**Status:** ✅ Implemented
+**Date:** December 2025
 
 ### Overview
 
-Phase 1 adds multi-user support with intelligent Instagram account rotation, credit-based usage limits, and comprehensive activity tracking. The system can now handle multiple users scraping simultaneously using a pool of Instagram accounts.
+Phase 1 adds multi-user support with intelligent Instagram account rotation, credit-based usage limits, and comprehensive activity tracking.
 
-### New Features
+### Key Features
 
 #### 1. Instagram Account Pool & Rotation
-- **Multiple Instagram Accounts**: System maintains a pool of Instagram accounts for scraping
-- **Intelligent Rotation**: Automatically selects the least-used Instagram account for each job
-- **Usage Tracking**: Tracks daily and lifetime usage statistics per account
-- **Health Monitoring**: Monitors cookie freshness and account status
+- **Multiple Accounts:** System maintains a pool of Instagram accounts
+- **Intelligent Selection:** Automatically chooses least-used active account
+- **Usage Tracking:** Daily and lifetime statistics per account
+- **Health Monitoring:** Cookie freshness and success rate tracking
 
 #### 2. Credit System
-- **Daily Quotas**: Each user has a configurable daily credit limit (default: 2000 reels)
-- **1 Credit = 1 Reel**: Credits are consumed for each successfully scraped reel
-- **Automatic Reset**: Credits reset daily at midnight
-- **Admin Control**: Admins can set custom limits per user
+- **Daily Quotas:** Each user has configurable daily limit (default: 2000 reels)
+- **1 Credit = 1 Reel:** Credits consumed for each successfully scraped reel
+- **Automatic Reset:** Credits reset daily at midnight
+- **Admin Control:** Custom limits per user
 
 #### 3. Activity Logging
-- **Comprehensive Logging**: All scraping events, account rotations, and admin actions are logged
-- **Debugging**: Detailed logs help troubleshoot issues
-- **Analytics**: Track usage patterns and system health
-
-#### 4. Database Enhancements
-- **New Tables**: `instagram_accounts`, `api_keys`, `admin_users`, `activity_logs`
-- **Enhanced Tracking**: Jobs and reels now linked to Instagram accounts used
-- **Better Analytics**: More detailed usage tracking
-
-### Database Schema Changes
-
-#### New Tables
-
-**instagram_accounts** - Pool of Instagram accounts
-- id, username, email, password
-- cookies, cookie_string, x_csrf_token
-- is_active, is_paused
-- daily_scrape_count, total_scrapes, success_count, failure_count
-- Usage tracking timestamps
-
-**api_keys** - Authentication for remote cookie updates
-- id, key_name, api_key (hashed)
-- is_active, permissions
-- last_used_at
-
-**admin_users** - Admin panel authentication
-- id, username, email, password_hash
-- is_active, last_login
-
-**activity_logs** - Event logging
-- id, event_type, user_id, instagram_account_id, job_id
-- details (JSONB), created_at
-
-#### Modified Tables
-
-**users** - Added credit system fields
-- daily_credit_limit (default: 2000)
-- credits_used_today
-- last_credit_reset_date
-
-**scraping_jobs** - Added Instagram account tracking
-- instagram_account_id (which account was used)
-- credits_consumed (total credits used by job)
-
-**scraped_reels** - Added Instagram account tracking
-- instagram_account_id
+- **Comprehensive:** All scraping events, rotations, admin actions logged
+- **Debugging:** Detailed logs for troubleshooting
+- **Analytics:** Track usage patterns and system health
 
 ### New Backend Modules
 
-#### [account_rotation.py](Backend/account_rotation.py)
-Handles intelligent account selection and rotation.
+#### account_rotation.py
 
-**Key Functions**:
-- `get_least_used_account()` - Select least-used active account
-- `increment_account_usage()` - Update usage statistics
-- `reset_daily_counts()` - Reset counters at midnight
-- `mark_account_failed()` - Track failures and pause if needed
-- `get_account_stats()` - Get account statistics
+Handles intelligent account selection.
 
-**Usage**:
+**Key Functions:**
+- `get_least_used_account(db)` - Select least-used active account
+- `increment_account_usage(db, account_id, reels_scraped, success)` - Update stats
+- `reset_daily_counts(db)` - Reset counters at midnight
+- `mark_account_failed(db, account_id)` - Track failures
+- `pause_account(db, account_id)` - Temporarily disable account
+- `resume_account(db, account_id)` - Re-enable account
+- `get_account_stats(db, account_id)` - Get statistics
+- `get_all_account_stats(db)` - Get all accounts stats
+
+**Usage Example:**
+
 ```python
 from account_rotation import get_least_used_account, increment_account_usage
 
@@ -422,17 +636,19 @@ account = get_least_used_account(db)
 increment_account_usage(db, account.id, reels_scraped=20, success=True)
 ```
 
-#### [credit_system.py](Backend/credit_system.py)
-Manages user credit quotas and consumption.
+#### credit_system.py
 
-**Key Functions**:
-- `check_user_credits()` - Validate if user has enough credits
-- `deduct_credits()` - Consume credits after scraping
-- `reset_all_daily_credits()` - Reset all users at midnight
-- `get_user_credit_summary()` - Get credit info for user
-- `update_user_credit_limit()` - Admin function to change limits
+Manages user credit quotas.
 
-**Usage**:
+**Key Functions:**
+- `check_user_credits(db, user_id, required_credits)` - Validate credits
+- `deduct_credits(db, user_id, credits)` - Consume credits
+- `reset_all_daily_credits(db)` - Reset all users at midnight
+- `get_user_credit_summary(db, user_id)` - Get credit info
+- `update_user_credit_limit(db, user_id, new_limit)` - Admin: change limit
+
+**Usage Example:**
+
 ```python
 from credit_system import check_user_credits, deduct_credits
 
@@ -444,97 +660,29 @@ else:
     raise InsufficientCreditsError("Not enough credits")
 ```
 
-### Database Migration
-
-**Location**: `Backend/migrations/001_multi_user_system.sql`
-
-**How to Run**:
-```bash
-# Option 1: Using psql
-psql -U scraper_user -d instagram_scraper -f Backend/migrations/001_multi_user_system.sql
-
-# Option 2: Using pgAdmin
-# Open pgAdmin → Query Tool → Load and execute the SQL file
-```
-
-**What it does**:
-1. Creates 4 new tables
-2. Adds credit fields to users table
-3. Adds Instagram account tracking to jobs and reels
-4. Creates indexes for performance
-5. Adds utility views for monitoring
-6. Creates triggers for auto-updates
-7. Inserts default admin user (username: admin, password: admin123)
-
-### Testing Phase 1
-
-**Test Script**: `Backend/test_phase1.py`
-
-**Run Tests**:
-```bash
-cd Backend
-python test_phase1.py
-```
-
-**Tests Include**:
-1. Database connection
-2. Table existence (all 8 tables)
-3. New columns in modified tables
-4. Instagram account CRUD operations
-5. Account rotation logic
-6. Credit system functionality
-7. Activity logging
-8. API key management
-9. Admin user management
-
-**Expected Output**:
-```
-╔════════════════════════════════════════════════════════╗
-║               PHASE 1 TEST SUITE                       ║
-╚════════════════════════════════════════════════════════╝
-
-TEST 1: Database Connection
-✓ Database connection successful
-
-TEST 2: Table Existence
-✓ Table 'users' exists
-✓ Table 'instagram_accounts' exists
-...
-
-TEST SUMMARY
-Tests Passed: 9/9 (100.0%)
-✓ All tests PASSED! Phase 1 implementation is working correctly.
-```
-
 ### Setup Instructions
 
-#### Step 1: Install New Dependencies
+#### Step 1: Run Migration
+
 ```bash
-cd Backend
-pip install -r requirements.txt
+psql -U scraper_user -d instagram_scraper -f Backend/migrations/001_multi_user_system.sql
 ```
 
-New dependency: `APScheduler==3.10.4` (for daily resets)
+This creates:
+- 4 new tables (instagram_accounts, api_keys, admin_users, activity_logs)
+- Adds credit fields to users table
+- Adds Instagram account tracking to jobs and reels
+- Creates indexes for performance
+- Inserts default admin user
 
-#### Step 2: Run Database Migration
-```bash
-psql -U scraper_user -d instagram_scraper -f migrations/001_multi_user_system.sql
-```
+#### Step 2: Add Instagram Accounts
 
-#### Step 3: Verify Migration
-```bash
-python test_phase1.py
-```
-
-#### Step 4: Add Instagram Accounts to Pool
 ```python
-# Using Python shell
 from database import SessionLocal
 from crud import create_instagram_account
 
 db = SessionLocal()
 
-# Add your Instagram accounts
 account1 = create_instagram_account(
     db=db,
     username="insta_account_1",
@@ -542,42 +690,36 @@ account1 = create_instagram_account(
     password="your_password_here"
 )
 
-account2 = create_instagram_account(
-    db=db,
-    username="insta_account_2",
-    email="account2@gmail.com",
-    password="your_password_here"
-)
-
 db.close()
 ```
 
-#### Step 5: Update Existing Users (Optional)
-All existing users automatically get:
-- `daily_credit_limit` = 2000
-- `credits_used_today` = 0
-- `last_credit_reset_date` = current date
+#### Step 3: Test
 
-No manual updates needed!
+```bash
+cd Backend
+python test_phase1.py
+```
+
+Expected: All tests pass ✅
 
 ### How It Works
 
-#### Scraping Flow with Account Rotation
+#### Scraping Flow
 
-1. **User makes scrape request** (e.g., 20 reels)
-2. **System checks credits**: Does user have 20 credits available?
+1. User makes scrape request (e.g., 20 reels)
+2. System checks credits: Does user have 20 credits?
    - ✅ Yes → Continue
    - ❌ No → Return "Insufficient credits" error
-3. **System selects Instagram account**: Get least-used active account from pool
-4. **Scraping job created**: Links user, Instagram account, and job
-5. **Reels scraped**: Using selected Instagram account's cookies
-6. **Credits deducted**: 1 credit per successfully scraped reel
-7. **Usage updated**: Instagram account's daily_scrape_count incremented
-8. **Activity logged**: Event stored in activity_logs table
+3. System selects Instagram account: Get least-used active account
+4. Scraping job created: Links user, Instagram account, and job
+5. Reels scraped: Using selected account's cookies
+6. Credits deducted: 1 credit per successfully scraped reel
+7. Usage updated: Instagram account's daily_scrape_count incremented
+8. Activity logged: Event stored in activity_logs
 
 #### Account Selection Algorithm
 
-```
+```sql
 SELECT * FROM instagram_accounts
 WHERE is_active = TRUE AND is_paused = FALSE
 ORDER BY daily_scrape_count ASC, last_used_at ASC NULLS FIRST
@@ -585,168 +727,149 @@ LIMIT 1
 ```
 
 This ensures:
-- Only active, non-paused accounts are used
+- Only active, non-paused accounts used
 - Least-used account selected first
-- Accounts never used get priority
-
-#### Credit Reset (Midnight Job)
-
-- Runs daily at 00:00 server time
-- Resets `credits_used_today` = 0 for all users
-- Resets `daily_scrape_count` = 0 for all Instagram accounts
-- Updates `last_reset_date` to current date
-- Logged in activity_logs
-
-### Configuration
-
-#### Modify User Credit Limits
-```python
-from credit_system import update_user_credit_limit
-
-# Give user 5000 credits per day
-update_user_credit_limit(db, user_id=1, new_limit=5000)
-```
-
-#### Pause/Resume Instagram Accounts
-```python
-from account_rotation import pause_account, resume_account
-
-# Temporarily disable an account
-pause_account(db, account_id=1)
-
-# Re-enable it
-resume_account(db, account_id=1)
-```
-
-### Monitoring & Analytics
-
-#### View Instagram Account Stats
-```python
-from account_rotation import get_all_account_stats
-
-stats = get_all_account_stats(db)
-for account in stats:
-    print(f"{account['username']}: {account['daily_scrape_count']} scrapes today")
-    print(f"  Success rate: {account['success_rate']}%")
-    print(f"  Cookie health: {account['cookie_health']}")
-```
-
-#### View User Credit Usage
-```python
-from credit_system import get_user_credit_summary
-
-summary = get_user_credit_summary(db, user_id=1)
-print(f"Credits: {summary['remaining']}/{summary['daily_limit']}")
-print(f"Usage: {summary['usage_percent']}%")
-```
-
-#### View Activity Logs
-```python
-from crud import get_activity_logs
-
-# Get recent scrape successes
-logs = get_activity_logs(db, event_type="scrape_success", limit=10)
-
-# Get logs for specific user
-user_logs = get_activity_logs(db, user_id=1, limit=20)
-```
+- Never-used accounts get priority
 
 ---
 
-## 🚀 Phase 2: Enhanced API & Cookie Management (NEW)
+## 🔧 Phase 2: Enhanced API & Cookie Management
 
-**Status**: ✅ Implemented
-**Date**: December 2025
+**Status:** ✅ Implemented
+**Date:** December 2025
 
 ### Overview
 
-Phase 2 enhances the scraping system with automatic account rotation, credit validation, cookie update API endpoints, and a remote cookie updater script for automated cookie management.
+Phase 2 enhances scraping with automatic rotation, credit validation, cookie update endpoints, and remote cookie updater script.
 
 ### New Features
 
 #### 1. Enhanced Scraping Endpoint
-- **Automatic Credit Validation**: Checks user credits before starting job
-- **Automatic Account Rotation**: Selects least-used Instagram account
-- **Comprehensive Logging**: All scraping events logged to activity_logs
-- **Better Error Handling**: Specific error codes for different failure types
+- **Automatic Credit Validation:** Checks credits before starting job
+- **Automatic Account Rotation:** Selects least-used Instagram account
+- **Comprehensive Logging:** All events logged to activity_logs
+- **Better Error Handling:** Specific error codes
 
 #### 2. Cookie Update API Endpoints
-- **Individual Cookie Updates**: Update cookies for specific Instagram accounts
-- **Bulk Cookie Updates**: Update multiple accounts at once
-- **API Key Authentication**: Secure endpoints with hashed API keys
-- **Account Listing**: View all Instagram accounts in pool
+- **Individual Updates:** Update cookies for specific accounts
+- **Bulk Updates:** Update multiple accounts at once
+- **API Key Authentication:** Secure endpoints with hashed keys
+- **Account Listing:** View all Instagram accounts
 
 #### 3. Remote Cookie Updater Script
-- **Automated Cookie Extraction**: Uses Playwright to log in and extract cookies
-- **Server Integration**: Automatically uploads cookies to server via API
-- **Multi-Account Support**: Processes multiple Instagram accounts sequentially
-- **Error Handling**: Robust error handling with detailed logging
-- **Windows Task Scheduler Ready**: Designed to run as scheduled task
+- **Automated Extraction:** Uses Playwright to login and extract cookies
+- **Server Integration:** Automatically uploads to server via API
+- **Multi-Account Support:** Processes multiple accounts sequentially
+- **Windows Task Scheduler Ready:** Designed for scheduled execution
 
 #### 4. Daily Reset Scheduler
-- **Automatic Resets**: Runs daily at midnight
-- **User Credits**: Resets all users' daily credits to 0
-- **Account Counters**: Resets Instagram accounts' daily scrape counts
-- **Activity Logging**: Logs reset events for monitoring
+- **Automatic Resets:** Runs daily at midnight
+- **User Credits:** Resets all users' daily credits
+- **Account Counters:** Resets Instagram accounts' daily scrape counts
+- **Activity Logging:** Logs reset events
 
-#### 5. API Key Management
-- **Secure Generation**: Cryptographically secure random keys
-- **Hashed Storage**: Keys stored as bcrypt hashes
-- **Usage Tracking**: Last used timestamp tracked
-- **Revocation Support**: Deactivate keys without deletion
+### New Backend Modules
 
-### API Documentation (Phase 2)
+#### scheduler.py
 
-#### Enhanced POST `/api/scrape`
-Improved scraping endpoint with automatic rotation and credit validation.
+Background scheduler for daily resets.
 
-**Authentication**: Required (Bearer token)
+**Key Functions:**
+- `start_scheduler()` - Initialize scheduler
+- `stop_scheduler()` - Gracefully stop
+- `daily_reset_job()` - Async midnight job
+- `run_manual_reset()` - Manual trigger for testing
+- `get_scheduler_status()` - Check status and next run
 
-**Request Body**:
-```json
-{
-  "usernames": ["username1", "username2"],
-  "reel_count": 20,
-  "group_id": null  // Optional
-}
+**Automatic Startup:**
+Scheduler automatically starts with FastAPI app.
+
+**Manual Test:**
+
+```bash
+cd Backend
+python scheduler.py
 ```
 
-**Success Response** (200):
-```json
-{
-  "job_id": "job_20251218_143022_123456",
-  "status": "started",
-  "message": "Scraping job started using Instagram account insta_account_1. Use /api/job/{job_id} to check status"
-}
+#### generate_api_key.py
+
+Utility for API key management.
+
+**Commands:**
+
+```bash
+# Create new API key
+python generate_api_key.py create "Cookie Updater - Windows PC"
+
+# List all API keys
+python generate_api_key.py list
+
+# Revoke an API key
+python generate_api_key.py revoke 1
 ```
 
-**Error Responses**:
-- **403 Forbidden** - Insufficient credits
-  ```json
-  {
-    "detail": "Insufficient credits. Remaining: 50, Required: 100"
-  }
-  ```
+#### remote_cookie_updater.py
 
-- **503 Service Unavailable** - No Instagram accounts available
-  ```json
-  {
-    "detail": "All Instagram accounts are exhausted. Try again later."
-  }
-  ```
+Automated cookie extraction script.
 
-#### POST `/api/admin/instagram-accounts/{account_id}/cookies`
-Update cookies for a specific Instagram account.
+**Setup:**
 
-**Authentication**: API Key (X-API-Key header)
+1. Install Playwright:
+```bash
+pip install playwright
+playwright install firefox
+```
 
-**Headers**:
+2. Configure script:
+```python
+SERVER_URL = "https://your-server.com"
+API_KEY = "your-api-key-here"
+
+INSTAGRAM_ACCOUNTS = [
+    {
+        "id": 2,
+        "email": "account1@gmail.com",
+        "password": "your_password"
+    }
+]
+```
+
+3. Test connection:
+```bash
+python remote_cookie_updater.py test
+```
+
+4. Run manually:
+```bash
+python remote_cookie_updater.py
+```
+
+**Windows Task Scheduler:**
+
+1. Open Task Scheduler
+2. Create Basic Task:
+   - Name: "Instagram Cookie Update"
+   - Trigger: Repeat every 5 days at 2:00 AM
+3. Action: Start a program
+   - Program: `C:\Python\python.exe`
+   - Arguments: `C:\path\to\remote_cookie_updater.py`
+4. Settings:
+   - Allow task to run on demand
+   - Stop if runs longer than 1 hour
+
+### API Endpoints (Phase 2)
+
+#### POST /api/admin/instagram-accounts/{account_id}/cookies
+
+Update cookies for specific Instagram account.
+
+**Headers:**
 ```
 X-API-Key: your-api-key-here
 Content-Type: application/json
 ```
 
-**Request Body**:
+**Request Body:**
 ```json
 {
   "sessionid": "abc123...",
@@ -761,7 +884,7 @@ Content-Type: application/json
 }
 ```
 
-**Success Response** (200):
+**Response (200):**
 ```json
 {
   "status": "success",
@@ -772,17 +895,11 @@ Content-Type: application/json
 }
 ```
 
-**Error Responses**:
-- **401 Unauthorized** - Invalid API key
-- **404 Not Found** - Instagram account doesn't exist
-- **400 Bad Request** - Empty cookies
+#### POST /api/admin/instagram-accounts/bulk-update-cookies
 
-#### POST `/api/admin/instagram-accounts/bulk-update-cookies`
-Update cookies for multiple Instagram accounts at once.
+Update cookies for multiple accounts.
 
-**Authentication**: API Key (X-API-Key header)
-
-**Request Body**:
+**Request Body:**
 ```json
 [
   {
@@ -802,7 +919,7 @@ Update cookies for multiple Instagram accounts at once.
 ]
 ```
 
-**Success Response** (200):
+**Response (200):**
 ```json
 {
   "status": "completed",
@@ -813,23 +930,22 @@ Update cookies for multiple Instagram accounts at once.
       "account_id": 1,
       "account_username": "insta_account_1",
       "status": "success"
-    },
-    {
-      "account_id": 2,
-      "account_username": "insta_account_2",
-      "status": "success"
     }
   ],
   "errors": []
 }
 ```
 
-#### GET `/api/admin/instagram-accounts`
-List all Instagram accounts in the pool.
+#### GET /api/admin/instagram-accounts
 
-**Authentication**: API Key (X-API-Key header)
+List all Instagram accounts.
 
-**Success Response** (200):
+**Headers:**
+```
+X-API-Key: your-api-key-here
+```
+
+**Response (200):**
 ```json
 {
   "status": "success",
@@ -845,512 +961,1078 @@ List all Instagram accounts in the pool.
       "total_scrapes": 2500,
       "success_count": 2450,
       "failure_count": 50,
-      "cookies_updated_at": "2025-12-18T14:30:22.123456",
-      "last_used_at": "2025-12-18T15:00:00.000000"
+      "cookies_updated_at": "2025-12-18T14:30:22",
+      "last_used_at": "2025-12-18T15:00:00"
     }
   ]
 }
 ```
 
-### New Backend Modules (Phase 2)
-
-#### [scheduler.py](Backend/scheduler.py)
-Background scheduler for daily reset jobs.
-
-**Key Functions**:
-- `start_scheduler()` - Initialize and start the scheduler
-- `stop_scheduler()` - Gracefully stop the scheduler
-- `daily_reset_job()` - Async function that runs at midnight
-- `run_manual_reset()` - Manually trigger reset for testing
-- `get_scheduler_status()` - Check scheduler status and next run time
-
-**Automatic Startup**:
-The scheduler automatically starts when the FastAPI app starts and stops on shutdown.
-
-**Manual Testing**:
-```bash
-cd Backend
-python scheduler.py
-```
-
-**Expected Output**:
-```
-============================================================
-Daily Reset Scheduler - Manual Test
-============================================================
-Starting daily reset job at 2025-12-18 23:59:59
-============================================================
-Resetting user credits...
-[OK] Reset credits for 15 user(s)
-Resetting Instagram account daily counts...
-[OK] Reset daily counts for 3 Instagram account(s)
-[OK] Daily reset completed successfully at 2025-12-18 00:00:05
-============================================================
-```
-
-#### [generate_api_key.py](Backend/generate_api_key.py)
-Utility for managing API keys.
-
-**Commands**:
-
-**Create New API Key**:
-```bash
-python generate_api_key.py create "Cookie Updater - Windows PC"
-```
-
-**Output**:
-```
-======================================================================
-API KEY GENERATED SUCCESSFULLY
-======================================================================
-Key Name: Cookie Updater - Windows PC
-Key ID: 1
-Created At: 2025-12-18 14:30:22.123456
-
-IMPORTANT: Save this API key securely. It will not be shown again!
-----------------------------------------------------------------------
-API Key: xYz123AbC456DeF789GhI012JkL345MnO678PqR901StU234VwX567
-----------------------------------------------------------------------
-
-Use this key in the 'X-API-Key' header when calling admin endpoints.
-======================================================================
-```
-
-**List All API Keys**:
-```bash
-python generate_api_key.py list
-```
-
-**Revoke an API Key**:
-```bash
-python generate_api_key.py revoke 1
-```
-
-#### [remote_cookie_updater.py](Backend/Scripts/remote_cookie_updater.py)
-Automated cookie extraction and server update script.
-
-**Setup**:
-
-1. Install Playwright:
-   ```bash
-   pip install playwright
-   playwright install firefox
-   ```
-
-2. Configure the script:
-   Edit `remote_cookie_updater.py` and update:
-   ```python
-   SERVER_URL = "https://your-server.com"  # Your server URL
-   API_KEY = "your-api-key-here"  # From generate_api_key.py
-
-   INSTAGRAM_ACCOUNTS = [
-       {
-           "id": 2,  # Database ID from instagram_accounts table
-           "email": "account1@gmail.com",
-           "password": "your_password"
-       },
-       {
-           "id": 3,
-           "email": "account2@gmail.com",
-           "password": "your_password"
-       }
-   ]
-   ```
-
-3. Test server connection:
-   ```bash
-   python remote_cookie_updater.py test
-   ```
-
-4. Run manually:
-   ```bash
-   python remote_cookie_updater.py
-   ```
-
-**Expected Output**:
-```
-======================================================================
-INSTAGRAM COOKIE UPDATER
-======================================================================
-Server: https://your-server.com
-Accounts to update: 2
-Started at: 2025-12-18 14:30:22
-======================================================================
-
-[1/2] Processing Account ID: 2
-Email: account1@gmail.com
-----------------------------------------------------------------------
-  [1/4] Launching browser...
-  [2/4] Navigating to Instagram login...
-  [3/4] Logging in...
-  [3/4] Login successful!
-  [4/4] Extracting cookies...
-  [OK] Extracted 9 essential cookies
-  [UPLOAD] Sending cookies to server...
-  [OK] Server updated successfully!
-       Account: insta_account_1
-       Updated at: 2025-12-18T14:32:15.123456
-
-  [WAIT] Waiting 15 seconds before next account...
-
-[2/2] Processing Account ID: 3
-...
-
-======================================================================
-COOKIE UPDATE SUMMARY
-======================================================================
-Total Accounts: 2
-Successful:     2
-Failed:         0
-Completed at:   2025-12-18 14:35:30
-======================================================================
-[SUCCESS] All accounts updated successfully!
-```
-
-**Windows Task Scheduler Setup**:
-
-1. Open Task Scheduler
-2. Create Basic Task:
-   - Name: "Instagram Cookie Update"
-   - Trigger: Repeat every 5 days
-   - Time: 2:00 AM (low traffic time)
-3. Action: Start a program
-   - Program: `C:\Python\python.exe`
-   - Arguments: `C:\path\to\remote_cookie_updater.py`
-   - Start in: `C:\path\to\Backend\Scripts\`
-4. Settings:
-   - Allow task to run on demand
-   - Stop if runs longer than 1 hour
-   - Run whether user is logged on or not
-
 ### Testing Phase 2
 
-**Test Script**: `Backend/test_phase2.py`
-
-**Run Tests**:
 ```bash
 cd Backend
 python test_phase2.py
 ```
 
-**Tests Include**:
-1. Account Rotation Logic - Verify least-used selection
-2. Credit System - Validation, deduction, and reset
-3. API Key Management - Creation and retrieval
-4. Activity Logging - Log creation and verification
-5. Instagram Account Management - Cookie updates
-6. Daily Reset Functions - User and account resets
-7. Job-Account Linkage - Verify job creation with Instagram account
+Expected: All 7 tests pass ✅
 
-**Expected Output**:
-```
-============================================================
-PHASE 2 TESTING - ENHANCED FEATURES
-============================================================
-Started at: 2025-12-18 14:30:22
-============================================================
+---
 
-============================================================
-TEST: Account Rotation System
-============================================================
-[OK] Selected account: insta_account_1 (ID: 2)
-     Daily count: 0
-     Total scrapes: 0
-[OK] Usage incremented correctly: 0 -> 5
+## 🎨 Phase 3: Admin Panel
 
-============================================================
-TEST: Credit System
-============================================================
-Testing with user: user@example.com (ID: 1)
-Current credits: 0/2000
-[OK] Credit validation passed. Remaining: 2000
-[OK] Credits deducted correctly: 0 -> 10
-[OK] Correctly rejected excessive request: Insufficient credits...
-[OK] Credits reset successfully to 0
+**Status:** ✅ Implemented
+**Date:** December 18, 2025
 
-...
+### Overview
 
-============================================================
-TEST SUMMARY
-============================================================
-[OK] Account Rotation Logic
-[OK] Credit System
-[OK] API Key Management
-[OK] Activity Logging
-[OK] Instagram Account Management
-[OK] Daily Reset Functions
-[OK] Job-Account Linkage
-============================================================
-Tests Passed: 7/7 (100.0%)
-[OK] All tests PASSED!
-============================================================
-```
+Phase 3 adds comprehensive admin panel with web-based user management, Instagram account monitoring, activity logs viewer, and system statistics dashboard.
 
-### Setup Instructions (Phase 2)
+### Features
 
-Phase 2 builds on Phase 1, so ensure Phase 1 is completed first.
+#### 1. Admin Panel Web UI
+- **Modern Dark Theme:** Black/purple/white design
+- **Responsive Layout:** Works on desktop and mobile
+- **Sidebar Navigation:** Easy access to features
+- **Real-time Updates:** Notification system
 
-#### Step 1: Verify Phase 1
+#### 2. User Management Interface
+- **User List:** View all users with credit usage
+- **Search & Filter:** Find users, filter by status
+- **Edit Users:** Modify credit limits, activate/deactivate
+- **User Details:** View stats and recent jobs
+- **Usage Tracking:** Visual progress bars
+
+#### 3. Instagram Account Management
+- **Account Pool Monitoring:** View all Instagram accounts
+- **Cookie Health Status:** Visual indicators
+- **Usage Statistics:** Daily and lifetime counts
+- **Success Rates:** Track performance
+- **Filter by Status:** Active, paused, healthy, expired
+
+#### 4. Activity Logs Viewer
+- **Comprehensive Logging:** All system events
+- **Advanced Filtering:** Date range, event type, user, account
+- **Export to CSV:** Download logs
+- **Real-time Updates:** See events as they happen
+
+#### 5. System Statistics Dashboard
+- **Overview Cards:** Users, accounts, today's reels, success rate
+- **Daily Trends Chart:** Reels scraped and active users
+- **Credit Usage Chart:** Top consumers
+- **Account Distribution:** Pie chart
+- **Hourly Patterns:** Peak usage times
+- **Success/Failure Rates:** Donut chart
+
+#### 6. Performance Optimizations
+- **Database Indexes:** Faster queries
+- **Database Views:** Precomputed statistics
+- **Efficient Queries:** Optimized SQL
+
+### Setup Instructions
+
+#### Step 1: Run Migration
+
 ```bash
-cd Backend
-python test_phase1.py
+psql -U scraper_user -d instagram_scraper -f Backend/migrations/002_phase3_indexes_views.sql
 ```
 
-All Phase 1 tests should pass.
+This creates:
+- 10 indexes for faster queries
+- 6 database views for statistics
+- Performance optimizations
 
-#### Step 2: No New Dependencies
-Phase 2 uses the same dependencies from Phase 1. No additional installations needed.
+#### Step 2: Create Admin User
 
-#### Step 3: Generate API Key
-```bash
-python generate_api_key.py create "Cookie Updater - Main"
+Default admin already created:
+- Username: `admin`
+- Password: `admin123`
+- ⚠️ **CHANGE PASSWORD IMMEDIATELY!**
+
+Or create new admin:
+
+```python
+from database import SessionLocal
+from models import AdminUser
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+db = SessionLocal()
+
+admin = AdminUser(
+    username="admin",
+    email="admin@example.com",
+    password_hash=pwd_context.hash("your_secure_password"),
+    is_active=True
+)
+db.add(admin)
+db.commit()
+db.close()
 ```
 
-Save the API key securely - you'll need it for the remote cookie updater.
+#### Step 3: Access Admin Panel
 
-#### Step 4: Test Enhanced Scraping Endpoint
+1. Start server: `python app.py`
+2. Navigate to: `http://localhost:8080/static/admin/index.html`
+3. Login with admin credentials
 
-The scraping endpoint now automatically validates credits and selects Instagram accounts. No code changes needed in your frontend!
+### Admin Panel Pages
 
-**Before Phase 2**:
-- Manual cookie management
-- No credit validation
-- No account rotation
+#### Dashboard
 
-**After Phase 2**:
-- Automatic credit check before scraping
-- Automatic selection of least-used Instagram account
-- Comprehensive activity logging
-- Cookies can be updated remotely via API
+**Overview Cards:**
+- Total Users (active/inactive)
+- Instagram Accounts (active/paused)
+- Today's Reels (jobs completed)
+- Success Rate (percentage)
 
-#### Step 5: Set Up Remote Cookie Updater (Optional)
+**Charts:**
+- Daily Scraping Trends (line chart)
+- Top Credit Consumers (bar chart)
 
-Only needed if you want automated cookie updates every 5 days.
+**Recent Activity:**
+- Last 10 events with icons
 
-1. Install Playwright on Windows PC:
-   ```bash
-   pip install playwright
-   playwright install firefox
-   ```
+#### User Management
 
-2. Configure `remote_cookie_updater.py` with your server URL and API key
+**Features:**
+- Search by email/username
+- Filter by status (all/active/inactive)
+- Edit credit limits
+- Activate/deactivate users
+- View user details
 
-3. Test connection:
-   ```bash
-   python remote_cookie_updater.py test
-   ```
+**User Table Columns:**
+- Email, Username
+- Credits (used/limit with progress bar)
+- Usage percentage
+- Status badge
+- Created date
+- Actions (Edit, Details)
 
-4. Run manually once to verify:
-   ```bash
-   python remote_cookie_updater.py
-   ```
+#### Instagram Accounts
 
-5. Set up Windows Task Scheduler (see instructions above)
+**Features:**
+- Filter by status
+- Cookie health monitoring
+- Usage statistics
+- Success rate tracking
 
-### How It Works (Phase 2)
+**Account Table Columns:**
+- Username, Email
+- Status badge
+- Cookie Health (with age)
+- Daily Usage
+- Total Scrapes
+- Success Rate (progress bar)
+- Last Used
 
-#### Enhanced Scraping Flow
+#### Activity Logs
 
-```
-User requests scrape
-  ↓
-System validates user credits
-  ├─ Insufficient credits → Return 403 error
-  └─ Credits OK → Continue
-      ↓
-System selects least-used Instagram account
-  ├─ No accounts available → Return 503 error
-  └─ Account selected → Continue
-      ↓
-Job created with user + Instagram account linkage
-      ↓
-Background task starts scraping
-      ↓
-For each successfully scraped reel:
-  - Deduct 1 credit from user
-  - Save reel to database with instagram_account_id
-      ↓
-After job completes:
-  - Update Instagram account usage counters
-  - Log activity (success/failure)
-      ↓
-Return job status to user
-```
+**Features:**
+- Date range filter
+- Event type filter
+- Export logs to CSV
+- Detailed information
 
-#### Cookie Update Flow
+**Log Table Columns:**
+- Timestamp
+- Event Type (colored badge)
+- User ID
+- Instagram Account ID
+- Job ID
+- Details (JSON)
 
-```
-Windows PC (runs every 5 days)
-  ↓
-Playwright launches browser
-  ↓
-Logs into each Instagram account
-  ↓
-Extracts essential cookies
-  ↓
-Sends cookies to server via API
-  ├─ Authentication: X-API-Key header
-  ├─ Endpoint: POST /api/admin/instagram-accounts/{id}/cookies
-  └─ Server validates API key
-      ↓
-Server updates instagram_accounts table
-  - Stores cookies as JSONB
-  - Updates cookie_string for headers
-  - Extracts and stores CSRF token
-  - Sets cookies_updated_at timestamp
-      ↓
-Activity logged
-      ↓
-Instagram account ready for scraping
-```
+#### Statistics
 
-#### Daily Reset Flow
+**Advanced Charts:**
+- Account Usage Distribution (pie chart)
+- Hourly Usage Pattern (bar chart)
+- Success vs Failure Rates (donut chart)
+
+**Time Range Filter:**
+- Last 7/14/30/90 days
+
+---
+
+## 📡 API Documentation
+
+### Base URL
 
 ```
-Scheduler (runs at 00:00 daily)
-  ↓
-Reset all users:
-  - credits_used_today = 0
-  - last_credit_reset_date = today
-      ↓
-Reset all Instagram accounts:
-  - daily_scrape_count = 0
-  - last_reset_date = today
-      ↓
-Log reset event in activity_logs
-      ↓
-System ready for new day
+http://localhost:8080
 ```
 
-### Configuration (Phase 2)
+### Authentication Endpoints
 
-#### Change Daily Reset Time
+#### POST /api/auth/signup
+
+Register new user.
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "username": "myusername",
+  "password": "SecurePass123"
+}
+```
+
+**Response (200):**
+```json
+{
+  "id": 1,
+  "email": "user@example.com",
+  "username": "myusername",
+  "is_active": true,
+  "created_at": "2025-12-18T14:30:22.123456"
+}
+```
+
+#### POST /api/auth/login
+
+User login.
+
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass123"
+}
+```
+
+**Response (200):**
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "token_type": "bearer",
+  "user": {
+    "id": 1,
+    "email": "user@example.com",
+    "username": "myusername"
+  }
+}
+```
+
+#### GET /api/auth/me
+
+Get current user info.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200):**
+```json
+{
+  "id": 1,
+  "email": "user@example.com",
+  "username": "myusername",
+  "is_active": true,
+  "created_at": "2025-12-18T14:30:22",
+  "daily_credit_limit": 2000,
+  "credits_used_today": 150,
+  "last_credit_reset_date": "2025-12-18"
+}
+```
+
+### Scraping Endpoints
+
+#### POST /api/scrape
+
+Start scraping job (enhanced with rotation & credits).
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request:**
+```json
+{
+  "usernames": ["cristiano", "leomessi"],
+  "reel_count": 20,
+  "group_id": null
+}
+```
+
+**Response (200):**
+```json
+{
+  "job_id": "job_20251218_143022_123456",
+  "status": "started",
+  "message": "Scraping job started using Instagram account insta_account_1"
+}
+```
+
+**Error (403):**
+```json
+{
+  "detail": "Insufficient credits. Remaining: 50, Required: 40"
+}
+```
+
+**Error (503):**
+```json
+{
+  "detail": "All Instagram accounts are exhausted. Try again later."
+}
+```
+
+#### GET /api/job/{job_id}
+
+Get job status.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200):**
+```json
+{
+  "job_id": "job_20251218_143022_123456",
+  "status": "completed",
+  "progress": 100,
+  "duration": 45.2,
+  "results": [
+    {
+      "username": "cristiano",
+      "status": "success",
+      "reels_scraped": 20
+    }
+  ]
+}
+```
+
+### Group Management Endpoints
+
+#### GET /api/groups
+
+List user's groups.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200):**
+```json
+{
+  "groups": [
+    {
+      "id": 1,
+      "name": "Favorite Athletes",
+      "usernames": ["cristiano", "leomessi", "neymarjr"],
+      "created_at": "2025-12-18T14:30:22",
+      "times_used": 5,
+      "last_used": "2025-12-19T10:15:00"
+    }
+  ]
+}
+```
+
+#### POST /api/groups
+
+Create new group.
+
+**Request:**
+```json
+{
+  "name": "Tech Influencers",
+  "usernames": ["mkbhd", "unboxtherapy", "linustech"]
+}
+```
+
+**Response (200):**
+```json
+{
+  "id": 2,
+  "name": "Tech Influencers",
+  "usernames": ["mkbhd", "unboxtherapy", "linustech"],
+  "created_at": "2025-12-18T14:30:22",
+  "times_used": 0
+}
+```
+
+#### PUT /api/groups/{group_id}
+
+Update existing group.
+
+**Request:**
+```json
+{
+  "name": "Tech Influencers Updated",
+  "usernames": ["mkbhd", "unboxtherapy", "linustech", "mrwhosetheboss"]
+}
+```
+
+#### DELETE /api/groups/{group_id}
+
+Delete group.
+
+**Response (200):**
+```json
+{
+  "message": "Group deleted successfully"
+}
+```
+
+### Analytics Endpoints
+
+#### GET /api/analytics
+
+Get analytics with filters.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+- `username` (string): Filter by Instagram username
+- `min_plays` (int): Minimum play count
+- `min_likes` (int): Minimum like count
+- `min_comments` (int): Minimum comment count
+- `sort_by` (string): date/plays/likes/comments
+- `sort_order` (string): asc/desc
+- `page` (int): Page number (default: 1)
+- `per_page` (int): Items per page (default: 50)
+
+**Response (200):**
+```json
+{
+  "reels": [
+    {
+      "id": 1,
+      "instagram_username": "cristiano",
+      "reel_code": "ABC123",
+      "play_count": 1500000,
+      "like_count": 50000,
+      "comment_count": 2000,
+      "reel_url": "https://instagram.com/reel/ABC123",
+      "scraped_at": "2025-12-18T14:30:22"
+    }
+  ],
+  "total": 150,
+  "page": 1,
+  "per_page": 50,
+  "total_pages": 3
+}
+```
+
+#### GET /api/analytics/export
+
+Export filtered data as CSV.
+
+**Query Parameters:** Same as /api/analytics
+
+**Response:** CSV file download
+
+### Admin Endpoints
+
+#### POST /api/admin/auth/login
+
+Admin login.
+
+**Request:**
+```json
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+```
+
+**Response (200):**
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+  "token_type": "bearer",
+  "admin": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@example.com"
+  }
+}
+```
+
+#### GET /api/admin/users
+
+List all users with filters.
+
+**Headers:**
+```
+Authorization: Bearer <admin-token>
+```
+
+**Query Parameters:**
+- `search` (string): Search email/username
+- `is_active` (boolean): Filter by status
+
+**Response (200):**
+```json
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "user@example.com",
+      "username": "myusername",
+      "is_active": true,
+      "daily_credit_limit": 2000,
+      "credits_used_today": 150,
+      "created_at": "2025-12-18T14:30:22"
+    }
+  ]
+}
+```
+
+#### PUT /api/admin/users/{user_id}
+
+Update user details.
+
+**Request:**
+```json
+{
+  "is_active": true,
+  "daily_credit_limit": 5000
+}
+```
+
+**Response (200):**
+```json
+{
+  "id": 1,
+  "email": "user@example.com",
+  "username": "myusername",
+  "is_active": true,
+  "daily_credit_limit": 5000
+}
+```
+
+#### GET /api/admin/logs
+
+Get activity logs.
+
+**Query Parameters:**
+- `start_date` (date): Filter start
+- `end_date` (date): Filter end
+- `event_type` (string): Filter by event
+- `user_id` (int): Filter by user
+- `limit` (int): Max results
+
+**Response (200):**
+```json
+{
+  "logs": [
+    {
+      "id": 1,
+      "event_type": "scrape_success",
+      "user_id": 1,
+      "instagram_account_id": 2,
+      "job_id": "job_123",
+      "details": {...},
+      "created_at": "2025-12-18T14:30:22"
+    }
+  ],
+  "total": 100
+}
+```
+
+#### GET /api/admin/stats/overview
+
+Get system overview statistics.
+
+**Response (200):**
+```json
+{
+  "total_users": 50,
+  "active_users": 45,
+  "total_instagram_accounts": 3,
+  "active_instagram_accounts": 2,
+  "today_reels_scraped": 500,
+  "today_jobs_completed": 25,
+  "overall_success_rate": 95.5
+}
+```
+
+---
+
+## 👤 User Dashboard Guide
+
+### Getting Started
+
+#### 1. Create Account
+
+1. Navigate to `http://localhost:8080`
+2. Click "Sign Up" tab
+3. Fill in:
+   - Email: valid email address
+   - Username: 3+ characters
+   - Password: 8+ characters with letters and numbers
+   - Confirm Password
+4. Click "Create Account"
+5. System creates account with 2000 daily credits
+
+#### 2. Login
+
+1. Enter email and password
+2. Click "Login"
+3. JWT token saved (7 days expiration)
+4. Redirected to main dashboard
+
+### Using the Dashboard
+
+#### Scraper Page
+
+**Method 1: Single Username**
+1. Enter Instagram username
+2. Click "Add" button
+3. Repeat for multiple accounts
+4. Username appears as purple tag
+
+**Method 2: Bulk Entry**
+1. Click "Add Multiple Usernames" textarea
+2. Enter usernames, one per line
+3. Click "Submit All"
+
+**Method 3: Load from Group**
+1. Click Groups tab
+2. Find your saved group
+3. Click "Load Group"
+4. Usernames populate automatically
+
+**Start Scraping:**
+1. Set "Number of Reels" (default: 20)
+2. Click "Start Scraping"
+3. Job starts immediately
+4. Switch to "Job Tracker" tab to monitor progress
+
+#### Job Tracker Page
+
+**Features:**
+- View all your scraping jobs
+- Real-time progress updates
+- Filter by status (running/completed/failed)
+- See duration and results
+- Jobs auto-refresh every 2 seconds
+
+**Job Card Information:**
+- Job ID
+- Timestamp
+- Status badge (running/success/failed)
+- Accounts scraped
+- Reels per account
+- Duration
+- Success/failure counts
+- Target accounts list
+
+**Actions:**
+- Click "Clear History" to remove all jobs
+- Click "Refresh" to manually update
+
+#### Groups Page
+
+**Create Group:**
+1. Add usernames to scraper
+2. Enter group name
+3. Click "Save as Group"
+4. Group appears in sidebar
+
+**Edit Group:**
+1. Click "Edit" icon
+2. Modify name or usernames
+3. Click "Save Changes"
+
+**Delete Group:**
+1. Click "Delete" icon
+2. Confirm deletion
+
+**Load Group:**
+1. Click "Load Group" button
+2. Usernames populate scraper
+3. Times used increments
+4. Last used timestamp updates
+
+#### Analytics Page
+
+**Filters:**
+- Instagram Username: Partial match search
+- Minimum Plays: Filter by play count
+- Minimum Likes: Filter by like count
+- Minimum Comments: Filter by comment count
+
+**Sorting:**
+- Date Scraped (default)
+- Play Count
+- Like Count
+- Comment Count
+- Ascending/Descending
+
+**Actions:**
+- Click "Apply Filters"
+- Navigate pages with Prev/Next
+- Click "Export CSV" to download data
+
+**Table Columns:**
+- Instagram Username
+- Reel Code
+- Play Count (formatted with commas)
+- Like Count
+- Comment Count
+- Scraped Date
+- Reel URL (clickable)
+
+### Credits System
+
+**Understanding Credits:**
+- Located in sidebar: "Daily Credits"
+- Shows: Used / Limit
+- Progress bar visualizes usage
+- Remaining credits displayed
+
+**How Credits Work:**
+- 1 Credit = 1 Successfully Scraped Reel
+- Failed scrapes don't consume credits
+- Resets daily at midnight
+- Admin can change your limit
+
+**What Happens When Out of Credits:**
+- Scraping requests rejected
+- Error message: "Insufficient credits"
+- Wait until midnight for reset
+- Or contact admin for limit increase
+
+---
+
+## 🛡 Admin Panel Guide
+
+### Access
+
+1. Navigate to: `http://localhost:8080/static/admin/index.html`
+2. Login with admin credentials
+3. Dashboard loads automatically
+
+### Dashboard Page
+
+**Overview Cards:**
+- **Total Users:** Click to view all users
+- **Instagram Accounts:** Click to manage accounts
+- **Today's Reels:** Total scraped today
+- **Success Rate:** Overall system health
+
+**Daily Trends Chart:**
+- Last 7/14/30 days
+- Blue line: Reels scraped
+- Purple line: Active users
+- Hover for exact values
+
+**Top Credit Consumers:**
+- Bar chart of top 10 users
+- Click username to view details
+
+**Recent Activity:**
+- Last 10 system events
+- Icons for event types
+- Timestamps relative (e.g., "2 hours ago")
+
+### User Management
+
+**User List:**
+- Search by email/username
+- Filter: All / Active / Inactive
+- Sort by email, credits, created date
+
+**Edit User:**
+1. Click "Edit" button
+2. Modify:
+   - Active status (checkbox)
+   - Daily Credit Limit (number)
+3. Click "Save Changes"
+4. Confirmation message appears
+
+**View User Details:**
+1. Click "Details" button
+2. See:
+   - Total jobs
+   - Total reels scraped
+   - Success rate
+   - Recent jobs list
+
+**User Table:**
+- Email (clickable to edit)
+- Username
+- Credits: Progress bar (used/limit)
+- Usage: Percentage with color coding
+  - Green: < 75%
+  - Yellow: 75-90%
+  - Red: > 90%
+- Status: Active/Inactive badge
+- Created: Date with time
+- Actions: Edit, Details buttons
+
+### Instagram Accounts
+
+**Filter Options:**
+- All Accounts
+- Active Only
+- Paused Only
+- Healthy Cookies (0-5 days old)
+- Expired Cookies (>7 days old)
+
+**Account Table:**
+- Username/Email
+- Status: Active/Paused/Inactive badge
+- Cookie Health:
+  - 🟢 Healthy (0-5 days)
+  - 🟡 Expiring (5-7 days)
+  - 🔴 Expired (>7 days)
+  - ⚫ No cookies
+- Daily Usage: Count
+- Total Scrapes: Lifetime count
+- Success Rate: Progress bar with percentage
+- Last Used: Timestamp
+
+**Actions:**
+- Click username to view details
+- Pause/Resume account
+- Update cookies (coming soon in UI)
+
+### Activity Logs
+
+**Filters:**
+- **Date Range:**
+  - Start Date (date picker)
+  - End Date (date picker)
+  - Default: Last 7 days
+- **Event Type:** Dropdown with all event types
+
+**Export:**
+1. Apply filters
+2. Click "Export CSV"
+3. File downloads with filtered logs
+
+**Log Table:**
+- Timestamp: Full date/time
+- Event Type: Colored badge
+  - Green: Success events
+  - Blue: Info events
+  - Red: Error events
+  - Yellow: Warning events
+- User ID: Link to user details
+- Instagram Account ID: Link to account
+- Job ID: Link to job (if applicable)
+- Details: JSON object (hover to see full)
+
+**Event Types:**
+- scrape_started
+- scrape_success
+- scrape_failed
+- credits_deducted
+- credits_reset
+- cookies_updated
+- account_selected
+- admin_action
+- user_created
+- user_updated
+
+### Statistics Page
+
+**Time Range Selector:**
+- Last 7 days
+- Last 14 days
+- Last 30 days
+- Last 90 days
+
+**Charts:**
+
+1. **Account Usage Distribution (Pie Chart)**
+   - Shows scrape distribution across Instagram accounts
+   - Colors: Different color per account
+   - Hover: See exact count and percentage
+
+2. **Hourly Usage Pattern (Bar Chart)**
+   - 24 bars (0-23 hours)
+   - Shows peak usage times
+   - Helps identify optimal scheduling
+
+3. **Success vs Failure Rates (Donut Chart)**
+   - Green: Successful scrapes
+   - Red: Failed scrapes
+   - Center: Total percentage
+   - Hover: See exact counts
+
+**Insights:**
+- Identify most-used Instagram accounts
+- Find peak usage hours
+- Monitor success rate trends
+- Detect accounts needing attention
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+**Backend/.env file:**
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/instagram_scraper
+
+# JWT Authentication
+SECRET_KEY=your-secret-key-generate-with-openssl
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080  # 7 days
+
+# Application Settings
+MAX_GROUPS_PER_USER=100
+ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+DEBUG=True
+ENVIRONMENT=development
+
+# Rate Limiting
+MAX_REQUESTS_PER_MINUTE=60
+```
+
+### Changing Credit Limits
+
+**Default Limit (for new users):**
+
+Edit `Backend/migrations/001_multi_user_system.sql`:
+```sql
+ALTER TABLE users ADD COLUMN daily_credit_limit INTEGER DEFAULT 2000;
+```
+
+Change `2000` to desired default.
+
+**Individual User:**
+
+Admin Panel → Users → Edit → Modify "Daily Credit Limit"
+
+Or via Python:
+```python
+from credit_system import update_user_credit_limit
+update_user_credit_limit(db, user_id=1, new_limit=5000)
+```
+
+### Changing Reset Time
+
+**Default:** Midnight (00:00) server time
 
 Edit `Backend/scheduler.py`:
 ```python
 scheduler.add_job(
     daily_reset_job,
-    trigger=CronTrigger(hour=2, minute=30),  # 2:30 AM instead of midnight
+    trigger=CronTrigger(hour=2, minute=30),  # 2:30 AM instead
     id='daily_reset',
     name='Daily Credit and Usage Counter Reset',
     replace_existing=True
 )
 ```
 
-#### Change Cookie Update Frequency
+### Changing Cookie Update Frequency
 
-Edit Windows Task Scheduler trigger:
-- Every 3 days: More cookie refreshes, more automation overhead
-- Every 7 days: Less frequent updates, cookies may expire sooner
-- Recommended: 5 days (balanced)
+**Default:** Every 5 days
 
-#### Modify Essential Cookies List
+**Windows Task Scheduler:**
+1. Open Task Scheduler
+2. Find "Instagram Cookie Update" task
+3. Edit Trigger
+4. Change "Repeat task every: X days"
 
-Edit `Backend/Scripts/remote_cookie_updater.py`:
+**Recommended:**
+- Minimum: 3 days
+- Maximum: 7 days
+- Optimal: 5 days
+
+### Scraping Parameters
+
+**Sleep Between Requests:**
+
+Edit `Backend/Scripts/pipeline.py`:
 ```python
-ESSENTIAL_COOKIES = [
-    'sessionid',     # Required - user session
-    'csrftoken',     # Required - CSRF protection
-    'ds_user_id',    # Required - user ID
-    'ig_did',        # Required - device ID
-    'mid',           # Recommended
-    'datr',          # Recommended
-    'rur',           # Optional - routing
-    'wd',            # Optional - window dimensions
-    'ig_nrcb'        # Optional - non-robot callback
-]
+fetch_reels_paginated(..., sleep_seconds=3.0)  # Change to 5.0 for slower
 ```
 
-### Monitoring (Phase 2)
+**Max Reels Per Page:**
 
-#### Check Scheduler Status
+Edit `Backend/Scripts/pipeline.py`:
 ```python
-from scheduler import get_scheduler_status
-
-status = get_scheduler_status()
-print(f"Scheduler: {status['status']}")
-for job in status['jobs']:
-    print(f"  Next run: {job['next_run']}")
+fetch_reels_paginated(..., max_per_page=50)  # Max: 50
 ```
 
-#### View Recent Cookie Updates
+### CORS Configuration
+
+**Development:**
+```env
+ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+```
+
+**Production:**
+```env
+ALLOWED_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+```
+
+Edit `Backend/app.py` for more control:
 ```python
-from crud import get_activity_logs
-
-logs = get_activity_logs(db, event_type="cookies_updated", limit=10)
-for log in logs:
-    print(f"Account {log.instagram_account_id} updated at {log.created_at}")
-    print(f"  By API key: {log.details['updated_by_api_key']}")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://yourdomain.com"],  # Specific domains
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+)
 ```
 
-#### Check Instagram Account Cookie Health
-```python
-from datetime import datetime, timedelta
+---
 
-accounts = get_all_instagram_accounts(db)
-for account in accounts:
-    if account.cookies_updated_at:
-        age = datetime.now() - account.cookies_updated_at
-        if age > timedelta(days=7):
-            print(f"[WARNING] {account.username} cookies are {age.days} days old")
-        else:
-            print(f"[OK] {account.username} cookies updated {age.days} days ago")
-    else:
-        print(f"[ERROR] {account.username} has no cookies!")
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### 1. "No access token found" in Console
+
+**Symptom:** Credit meter shows 0/2000 but doesn't update
+
+**Cause:** Authentication token issue
+
+**Solution:**
+1. Clear browser localStorage
+2. Logout and login again
+3. Hard refresh (Ctrl+Shift+R)
+4. Check if `authToken` exists in localStorage (F12 → Application → Local Storage)
+
+#### 2. Credits Not Resetting at Midnight
+
+**Symptom:** Credits still showing used from previous day
+
+**Cause:** Scheduler not running or timezone issue
+
+**Solution:**
+```bash
+cd Backend
+python scheduler.py  # Test manual reset
 ```
 
-### Troubleshooting Phase 2
-
-#### Scheduler not running
-Check startup logs:
+Check logs:
 ```
-[OK] Database initialized successfully
-[OK] Daily reset scheduler started
+[OK] Reset credits for X user(s)
+[OK] Reset daily counts for Y Instagram account(s)
 ```
 
-If missing, check `Backend/app.py` startup event.
+If scheduler not running:
+- Check `python app.py` logs for "Daily reset scheduler started"
+- Restart backend server
 
-#### Cookie update fails with 401
-- API key invalid or revoked
-- Check API key exists: `python generate_api_key.py list`
-- Generate new key: `python generate_api_key.py create "New Key"`
+#### 3. Scraping Fails - No Reels Scraped
 
-#### Remote script can't connect to server
-- Check `SERVER_URL` in `remote_cookie_updater.py`
-- Test server accessibility: `curl http://your-server.com/health`
-- Check firewall rules
-- Verify server is running
+**Symptom:** Job completes but 0 reels scraped
 
-#### Playwright login fails
-- Instagram detected automation (use `headless=False` to debug)
-- Password incorrect
-- Account requires 2FA (not supported yet)
-- Instagram changed login flow (update selectors)
+**Cause:** Instagram account has invalid/test cookies
 
-#### Credits not being deducted
-Check if scraping succeeded:
-```python
-# Credits only deducted for successfully scraped reels
-# Check job results
-job = get_job_by_id(db, job_id)
-print(f"Status: {job.status}")
-print(f"Credits consumed: {job.credits_consumed}")
-```
-
-#### Account rotation not working
-All accounts paused or inactive:
-```python
-accounts = get_all_instagram_accounts(db)
-active = [a for a in accounts if a.is_active and not a.is_paused]
-print(f"Active accounts: {len(active)}")
-```
-
-#### Scraping fails - No reels scraped
-**Symptom**: Scraping job starts but returns 0 reels, no errors in logs
-
-**Cause**: Instagram account has invalid/test cookies
-
-**Diagnosis**:
+**Diagnosis:**
 ```python
 from database import SessionLocal
 from crud import get_all_instagram_accounts
@@ -1364,483 +2046,352 @@ for account in accounts:
     print(f"  Cookie length: {cookie_len}")
     print(f"  Active: {account.is_active}, Paused: {account.is_paused}")
 
-    # Check if cookies look valid (should be >300 chars for real cookies)
     if cookie_len < 100:
-        print(f"  ⚠️ WARNING: Cookies appear invalid (too short)")
-
-db.close()
+        print(f"  ⚠️ WARNING: Cookies appear invalid")
 ```
 
-**Solution**:
-1. **Option 1** - Pause accounts with invalid cookies:
-   ```python
-   from account_rotation import pause_account
-   pause_account(db, account_id=1)  # Replace with actual account ID
-   ```
+**Solution:**
 
-2. **Option 2** - Update cookies using remote_cookie_updater:
-   ```bash
-   # Configure the account in remote_cookie_updater.py
-   # Then run it to extract fresh cookies
-   python Backend/Scripts/remote_cookie_updater.py
-   ```
-
-3. **Option 3** - Manually update via API:
-   ```python
-   import requests
-
-   cookies = {
-       "sessionid": "valid_session_id_here",
-       "csrftoken": "valid_csrf_token_here",
-       # ... other cookies
-   }
-
-   response = requests.post(
-       "http://localhost:8080/api/admin/instagram-accounts/1/cookies",
-       headers={"X-API-Key": "your-api-key"},
-       json=cookies
-   )
-   print(response.json())
-   ```
-
-**Prevention**: Always verify new Instagram accounts have valid cookies before activating them. Test cookies are for development only!
-
----
-
-## 🚀 Phase 3: Admin Panel & Advanced Features (NEW)
-
-**Status**: ✅ Implemented
-**Date**: December 18, 2025
-
-### Overview
-
-Phase 3 adds a comprehensive admin panel with web-based user management, Instagram account monitoring, activity logs viewer, system statistics dashboard, and real-time notifications.
-
-### New Features
-
-#### 1. Admin Panel Web UI
-- **Modern Dark Theme**: Matches existing design language (black/purple/white)
-- **Responsive Layout**: Works on desktop and mobile devices
-- **Sidebar Navigation**: Easy access to all admin features
-- **Real-time Updates**: Notification system for live events
-
-#### 2. User Management Interface
-- **User List**: View all users with credit usage and status
-- **Search & Filter**: Find users by email/username, filter by status
-- **Edit Users**: Modify credit limits and activate/deactivate accounts
-- **User Details**: View detailed statistics and recent jobs
-- **Usage Tracking**: Visual progress bars for credit consumption
-
-#### 3. Instagram Account Management
-- **Account Pool Monitoring**: View all Instagram accounts
-- **Cookie Health Status**: Visual indicators for cookie freshness
-- **Usage Statistics**: Daily and lifetime scrape counts
-- **Success Rates**: Track account performance
-- **Filter by Status**: Active, paused, healthy cookies, expired cookies
-
-#### 4. Activity Logs Viewer
-- **Comprehensive Logging**: All system events in one place
-- **Advanced Filtering**: By date range, event type, user, account
-- **Export to CSV**: Download logs for external analysis
-- **Real-time Updates**: See events as they happen
-
-#### 5. System Statistics Dashboard
-- **Overview Cards**: Total users, accounts, today's reels, success rate
-- **Daily Trends Chart**: Reels scraped and active users over time
-- **Credit Usage Chart**: Top consumers visualization
-- **Account Distribution**: Pie chart of account usage
-- **Hourly Patterns**: Identify peak usage times
-- **Success/Failure Rates**: Donut chart visualization
-
-#### 6. Performance Optimizations
-- **Database Indexes**: Faster queries on activity_logs, scraped_reels, scraping_jobs
-- **Database Views**: Precomputed statistics for quick access
-- **Efficient Queries**: Optimized SQL for large datasets
-
-### Admin Panel Structure
-
-```
-Frontend/admin/
-├── index.html           # Main admin dashboard page
-├── admin.css            # Admin panel styles (dark theme)
-├── admin.js             # Main controller and navigation
-├── components/
-│   ├── users.js         # User management component
-│   ├── accounts.js      # Instagram account management
-│   ├── logs.js          # Activity logs viewer
-│   └── stats.js         # Statistics dashboard
-└── utils/
-    ├── api.js           # API client for backend communication
-    └── charts.js        # Chart.js helper utilities
-```
-
-### Setup Instructions (Phase 3)
-
-#### Step 1: Run Database Migration
-
-The migration adds performance indexes and useful database views:
-
-**Option 1: Using Python script**
-```bash
-cd Backend
-python run_migration.py migrations/002_phase3_indexes_views.sql
-```
-
-**Option 2: Using psql directly**
-```bash
-psql -U scraper_user -d instagram_scraper -f Backend/migrations/002_phase3_indexes_views.sql
-```
-
-This creates:
-- 10 indexes for faster queries
-- 6 database views for complex statistics
-- Performance optimizations for large datasets
-
-#### Step 2: Create Admin User
-
-Admin users are separate from regular users and have special permissions:
-
+Option 1 - Pause invalid accounts:
 ```python
-from database import SessionLocal
-from models import AdminUser
-from passlib.context import CryptContext
+from account_rotation import pause_account
+pause_account(db, account_id=1)
+```
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-db = SessionLocal()
+Option 2 - Update cookies:
+```bash
+python Backend/Scripts/remote_cookie_updater.py
+```
 
-# Create admin user
-admin = AdminUser(
-    username="admin",
-    email="admin@example.com",
-    password_hash=pwd_context.hash("your_secure_password"),
-    is_active=True
+Option 3 - Manually update via API:
+```python
+import requests
+
+cookies = {
+    "sessionid": "valid_session_id_here",
+    "csrftoken": "valid_csrf_token_here"
+}
+
+response = requests.post(
+    "http://localhost:8080/api/admin/instagram-accounts/1/cookies",
+    headers={"X-API-Key": "your-api-key"},
+    json=cookies
 )
-db.add(admin)
-db.commit()
-db.close()
 ```
 
-**Default Admin** (from Phase 1 migration):
-- Username: `admin`
-- Email: `admin@example.com`
-- Password: `admin123`
-- ⚠️ **Change this password immediately for production!**
+#### 4. "All Instagram accounts are exhausted"
 
-#### Step 3: Access Admin Panel
+**Symptom:** Can't start scraping job
 
-1. Start the server:
-   ```bash
-   cd Backend
-   python app.py
-   ```
+**Cause:** All Instagram accounts are paused or inactive
 
-2. Navigate to admin panel:
-   ```
-   http://localhost:8080/static/admin/index.html
-   ```
+**Solution:**
+```bash
+# Check account status
+cd Backend
+python -c "
+from database import SessionLocal
+from crud import get_all_instagram_accounts
 
-3. Login with admin credentials
-
-### Admin Panel Pages
-
-#### Dashboard Page
-
-**Overview Cards:**
-- Total Users (active/inactive count)
-- Instagram Accounts (active/paused count)
-- Today's Reels (jobs completed count)
-- Success Rate (percentage with total jobs)
-
-**Charts:**
-- Daily Scraping Trends (line chart, last 7/14/30 days)
-- Top Credit Consumers (bar chart)
-
-**Recent Activity:**
-- Last 10 system events with icons and timestamps
-
-#### User Management Page
-
-**Features:**
-- Search users by email/username
-- Filter by status (all/active/inactive)
-- View user details (jobs, reels, success rate)
-- Edit credit limits
-- Activate/deactivate users
-
-**User Table Columns:**
-- Email, Username
-- Credits (used/limit with progress bar)
-- Usage percentage
-- Status badge
-- Created date
-- Actions (Edit, Details)
-
-#### Instagram Accounts Page
-
-**Features:**
-- Filter by status (all/active/paused/healthy/expired)
-- Cookie health monitoring
-- Usage statistics per account
-- Success rate tracking
-
-**Account Table Columns:**
-- Username, Email
-- Status (active/paused/inactive badge)
-- Cookie Health (healthy/expiring/expired with age)
-- Daily Usage count
-- Total Scrapes count
-- Success Rate (with progress bar)
-- Last Used timestamp
-
-#### Activity Logs Page
-
-**Features:**
-- Date range filter (start/end date pickers)
-- Event type filter (scrape_started, scrape_success, scrape_failed, etc.)
-- Export logs to CSV
-- Detailed log information
-
-**Log Table Columns:**
-- Timestamp
-- Event Type (with colored badge)
-- User ID
-- Instagram Account ID
-- Job ID
-- Details (JSON formatted)
-
-#### Statistics Page
-
-**Advanced Charts:**
-- Account Usage Distribution (pie chart)
-- Hourly Usage Pattern (bar chart showing peak hours)
-- Success vs Failure Rates (donut chart)
-
-**Time Range Filter:**
-- Last 7/14/30/90 days
-
-### Database Views Added
-
-#### `v_daily_stats`
-Aggregates daily scraping metrics:
-- Date, total reels, active users, accounts used
-- Average plays, likes, comments
-
-#### `v_user_summary`
-User statistics with credit usage:
-- User info, credit limits, usage percent
-- Total jobs, successful jobs, total reels scraped
-
-#### `v_instagram_account_health`
-Account status and cookie health:
-- Account info, status flags
-- Success rate calculation
-- Cookie health status (HEALTHY/EXPIRING_SOON/EXPIRED/NO_COOKIES)
-- Cookie age in days
-
-#### `v_recent_activity`
-Recent system activity with joined details:
-- Activity log with user/account usernames
-- Job IDs and event details
-
-#### `v_job_performance`
-Job performance metrics:
-- Job details with user and account info
-- Duration in seconds
-- Reels scraped and credits consumed
-
-#### `v_hourly_usage_pattern`
-Usage patterns by hour:
-- Hour of day (0-23)
-- Total reels, unique users, average plays
-
-### API Endpoints (Phase 3)
-
-All endpoints require admin authentication (`Authorization: Bearer <token>`)
-
-#### Authentication
-```
-POST /api/admin/auth/login
-GET  /api/admin/auth/me
+db = SessionLocal()
+accounts = get_all_instagram_accounts(db)
+active = [a for a in accounts if a.is_active and not a.is_paused]
+print(f'Active accounts: {len(active)}')
+for a in active:
+    print(f'  - {a.username}')
+"
 ```
 
-#### User Management
-```
-GET    /api/admin/users                    # List users with filters
-GET    /api/admin/users/{user_id}          # User details
-PUT    /api/admin/users/{user_id}          # Update user
-DELETE /api/admin/users/{user_id}          # Deactivate user
-GET    /api/admin/users/{user_id}/stats    # User statistics
+Resume accounts:
+```python
+from account_rotation import resume_account
+resume_account(db, account_id=1)
 ```
 
-#### Activity Logs
-```
-GET /api/admin/logs              # List logs with filters
-GET /api/admin/logs/stats        # Log statistics
-```
+Or add new accounts.
 
-#### System Statistics
-```
-GET /api/admin/stats/overview       # System overview
-GET /api/admin/stats/usage          # Usage over time
-GET /api/admin/stats/performance    # Performance metrics
-```
+#### 5. Database Connection Failed
 
-### Configuration
+**Error:** `could not connect to server: Connection refused`
 
-#### Admin Panel Settings
+**Solution:**
+```bash
+# Check if PostgreSQL is running
+docker ps
 
-No additional configuration needed! The admin panel uses the same authentication system as the main app.
+# If not running
+docker start instagram_scraper_db
 
-#### Customize Chart Time Ranges
+# Check logs
+docker logs instagram_scraper_db
 
-Edit `Frontend/admin/components/stats.js`:
-```javascript
-// Change default days for charts
-currentDays: 7  // Change to 14, 30, etc.
+# Verify port
+# Windows:
+netstat -ano | findstr :5432
+# macOS/Linux:
+lsof -i :5432
 ```
 
-#### Customize Notification Polling Interval
+#### 6. Admin Panel Won't Load
 
-Edit `Frontend/admin/admin.js`:
-```javascript
-// Default: 30 seconds
-setInterval(() => {
-    this.loadNotifications();
-}, 30000);  // Change to desired interval in milliseconds
+**Symptom:** Blank page or "Failed to load profile"
+
+**Solution:**
+1. Check backend is running
+2. Verify admin user exists:
+```bash
+psql -U scraper_user -d instagram_scraper -c "SELECT * FROM admin_users;"
 ```
+3. Clear browser cache
+4. Check browser console (F12) for errors
+5. Try different browser
 
-### Using the Admin Panel
+#### 7. Playwright Login Fails (Cookie Updater)
 
-#### Managing Users
+**Error:** "Login failed" or "Error during login"
 
-1. **View all users**: Navigate to "Users" page
-2. **Search for user**: Type email/username in search box
-3. **Edit credit limit**:
-   - Click "Edit" button next to user
-   - Modify "Daily Credit Limit" field
-   - Click "Save Changes"
-4. **Deactivate user**:
-   - Click "Edit" button
-   - Uncheck "Active" checkbox
-   - Click "Save Changes"
+**Cause:** Instagram detected automation or 2FA enabled
 
-#### Monitoring Instagram Accounts
+**Solution:**
+- Use browser cookie method instead (recommended)
+- Disable headless mode to debug:
+  ```python
+  browser = await playwright.firefox.launch(headless=False)
+  ```
+- Check if 2FA is enabled (not supported)
+- Use valid Instagram credentials
 
-1. **View account health**: Navigate to "Instagram Accounts" page
-2. **Check cookie status**: Look at "Cookie Health" column
-   - 🟢 Healthy (0-5 days old)
-   - 🟡 Expiring (5-7 days old)
-   - 🔴 Expired (>7 days old)
-3. **Filter accounts**: Use status dropdown
-   - Active: Only active, non-paused accounts
-   - Paused: Only paused accounts
-   - Healthy: Accounts with fresh cookies (0-5 days)
-   - Expired: Accounts needing cookie refresh (>7 days)
+#### 8. Rate Limiting / Blocked Requests
 
-#### Viewing Activity Logs
+**Symptom:** Instagram returns errors or empty responses
 
-1. **Set date range**: Use start/end date pickers (default: last 7 days)
-2. **Filter by event type**: Select from dropdown
-3. **Export logs**: Click "Export CSV" button
-4. **View details**: Hover over details column to see full JSON
+**Solution:**
+- Increase sleep time:
+  ```python
+  fetch_reels_paginated(..., sleep_seconds=5.0)
+  ```
+- Use valid session cookies
+- Wait 30-60 minutes before retrying
+- Add more Instagram accounts to pool
 
-#### Analyzing Statistics
+#### 9. Charts Not Displaying (Admin Panel)
 
-1. **Dashboard overview**: View real-time metrics on Dashboard page
-2. **Advanced statistics**: Navigate to "Statistics" page
-3. **Change time range**: Use dropdown filter (7/14/30/90 days)
-4. **Identify trends**: Look at daily trends chart
-5. **Find top users**: Check credit usage bar chart
-6. **Monitor success rate**: View donut chart
+**Symptom:** Empty chart areas
 
-### Troubleshooting Phase 3
-
-#### Admin panel won't load
-
-**Symptom**: Blank page or "Failed to load profile" error
-
-**Solutions**:
-1. Check if backend is running: `python app.py`
-2. Verify admin user exists in database
-3. Check browser console for errors
-4. Clear browser cache and localStorage
-
-#### "Invalid or inactive API key" when accessing admin endpoints
-
-**Cause**: Admin authentication not working
-
-**Solutions**:
-1. Login again at `/static/login.html`
-2. Check if admin user exists in `admin_users` table
-3. Verify token is being sent in Authorization header
-
-#### Charts not displaying
-
-**Symptom**: Empty chart areas
-
-**Solutions**:
+**Solution:**
 1. Check browser console for Chart.js errors
-2. Verify Chart.js CDN is accessible: `https://cdn.jsdelivr.net/npm/chart.js`
-3. Check if data endpoints are returning valid JSON
+2. Verify Chart.js CDN is accessible
+3. Check if data endpoints return valid JSON
 4. Inspect network tab for failed API calls
+5. Clear browser cache
 
-#### Database migration fails
+#### 10. Database Migration Fails
 
-**Error**: `column "created_at" does not exist`
+**Error:** `column "created_at" does not exist`
 
-**Solution**: Migration may have syntax issues. Run migrations manually:
-```sql
--- Connect to database
+**Solution:**
+
+Run migrations manually:
+```bash
+# Connect to database
 psql -U scraper_user -d instagram_scraper
 
--- Create indexes manually
-CREATE INDEX idx_activity_logs_event_type ON activity_logs(event_type);
-CREATE INDEX idx_scraped_reels_scraped_at ON scraped_reels(scraped_at DESC);
--- ... etc
+# Create tables step by step
+# Copy SQL from migrations/*.sql
+```
+
+Or drop and recreate:
+```bash
+docker-compose down -v
+docker-compose up -d
+psql -U scraper_user -d instagram_scraper -f migrations/001_multi_user_system.sql
+psql -U scraper_user -d instagram_scraper -f migrations/002_phase3_indexes_views.sql
 ```
 
 ---
 
-### Troubleshooting Phase 1
+## 🔐 Security
 
-#### "Table already exists" errors
-The migration uses `CREATE TABLE IF NOT EXISTS`, so it's safe to run multiple times.
+### Best Practices
 
-#### Credits not resetting
-Check if the daily reset job is running. For now, manually reset:
-```python
-from credit_system import reset_all_daily_credits
-reset_all_daily_credits(db)
-```
+#### Passwords
+- **SECRET_KEY:** Generate with `openssl rand -hex 32`
+- **Database Password:** Use strong password (20+ characters)
+- **User Passwords:** Minimum 8 characters, letters + numbers enforced
+- **Admin Password:** CHANGE DEFAULT PASSWORD IMMEDIATELY
 
-#### No Instagram accounts available
-Add Instagram accounts to the pool:
-```python
-create_instagram_account(db, username="...", email="...", password="...")
-```
+#### Environment Variables
+- **Never commit .env** to version control
+- Add to `.gitignore`:
+  ```
+  .env
+  *.env
+  ```
+- Use `.env.example` as template
 
-#### Account rotation not working
-Check account status:
-```python
-accounts = get_all_instagram_accounts(db)
-for acc in accounts:
-    print(f"{acc.username}: active={acc.is_active}, paused={acc.is_paused}")
-```
+#### CORS
+- **Development:** Allow localhost
+- **Production:** Restrict to your domain only
+  ```python
+  allow_origins=["https://yourdomain.com"]
+  ```
+
+#### HTTPS
+- **Production:** Use HTTPS only
+- Install SSL certificate (Let's Encrypt)
+- Configure Nginx reverse proxy
+
+#### Rate Limiting
+- **Enabled:** FastAPI slowapi middleware
+- **Default:** 60 requests/minute per IP
+- Adjust in `app.py`:
+  ```python
+  limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+  ```
+
+#### Database
+- **User Isolation:** Enforced at query level
+- **SQL Injection:** Prevented by SQLAlchemy ORM
+- **Foreign Keys:** CASCADE delete prevents orphaned records
+
+#### JWT Tokens
+- **Expiration:** 7 days (configurable)
+- **Algorithm:** HS256 (HMAC with SHA-256)
+- **Storage:** localStorage (client-side)
+- **Transmission:** Authorization header only
+
+#### API Keys
+- **Hashing:** Bcrypt hashed before storage
+- **Permissions:** JSONB field for granular control
+- **Revocation:** Set `is_active = false`
+- **Rotation:** Generate new keys periodically
+
+#### Instagram Cookies
+- **Encryption:** Store in database as JSONB
+- **Access Control:** Admin-only endpoints
+- **Expiration:** Auto-refresh every 5 days
+- **Security:** Keep cookies private (full account access)
+
+### Production Checklist
+
+Before deploying to production:
+
+- [ ] Change SECRET_KEY in .env
+- [ ] Change admin password
+- [ ] Change database password
+- [ ] Enable HTTPS
+- [ ] Restrict CORS to production domain
+- [ ] Set DEBUG=False
+- [ ] Set ENVIRONMENT=production
+- [ ] Configure firewall (ports 80, 443, 5432)
+- [ ] Set up database backups
+- [ ] Configure log rotation
+- [ ] Enable monitoring (Sentry, etc.)
+- [ ] Test all features
+- [ ] Load test with expected traffic
+- [ ] Create admin user with strong password
+- [ ] Document all credentials securely
 
 ---
 
 ## 🤝 Contributing
 
-When modifying the code:
-1. Test thoroughly with various usernames
-2. Handle edge cases (private accounts, deleted accounts, etc.)
-3. Update this documentation for new features
-4. Follow the existing code style
+### Development Setup
 
-## 📄 License
+```bash
+# 1. Fork repository
+# 2. Clone your fork
+git clone https://github.com/yourusername/Instagram_reel_scrapper.git
 
-This project is for educational purposes. Respect Instagram's Terms of Service and robots.txt when using this tool.
+# 3. Create feature branch
+git checkout -b feature/amazing-feature
+
+# 4. Make changes
+# 5. Test thoroughly
+
+# 6. Commit changes
+git commit -m "Add some amazing feature"
+
+# 7. Push to branch
+git push origin feature/amazing-feature
+
+# 8. Open Pull Request
+```
+
+### Code Style
+
+- **Python:** PEP 8 style guide
+- **JavaScript:** ES6+ syntax
+- **SQL:** Uppercase keywords
+- **Comments:** Clear and concise
+
+### Testing
+
+Before submitting PR:
+```bash
+# Run Phase 1 tests
+cd Backend
+python test_phase1.py
+
+# Run Phase 2 tests
+python test_phase2.py
+
+# Test all features manually
+```
+
+### Areas for Improvement
+
+- [ ] Add unit tests for all modules
+- [ ] Implement Celery for distributed tasks
+- [ ] Add Redis for job queue
+- [ ] Proxy support for scraping
+- [ ] Real-time notifications (WebSockets)
+- [ ] Export to multiple formats (Excel, JSON)
+- [ ] Advanced analytics (charts, graphs)
+- [ ] Email notifications
+- [ ] Two-factor authentication
+- [ ] API rate limiting per user
+- [ ] Webhook support
+- [ ] CLI tool
+- [ ] Docker compose for full stack
+- [ ] Kubernetes deployment config
 
 ---
 
+## 📄 License
+
+This project is for educational purposes. Please respect Instagram's Terms of Service when using this tool.
+
+**Disclaimer:** This tool is not affiliated with Instagram. Use responsibly and at your own risk.
+
+---
+
+## 📞 Support
+
+If you encounter issues:
+
+1. Check [Troubleshooting](#troubleshooting) section
+2. Review API documentation at `http://localhost:8080/docs`
+3. Check Docker logs: `docker logs instagram_scraper_db`
+4. Check application logs in terminal
+5. Open an issue on GitHub
+
+---
+
+## 🎉 Credits
+
+**Built with:**
+- FastAPI (backend framework)
+- PostgreSQL (database)
+- Vanilla JavaScript (frontend)
+- Chart.js (admin panel charts)
+- Docker (PostgreSQL container)
+
 **Created with Claude Code** 🤖
+
+---
+
+**Version:** 3.0
+**Last Updated:** December 2025
+**Status:** Production Ready ✅
+

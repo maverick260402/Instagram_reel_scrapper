@@ -967,14 +967,15 @@ window.removeUsername = removeUsername;
 
 async function loadCreditInfo() {
     try {
-        const token = localStorage.getItem('access_token');
+        // Use the correct token key - authToken, not access_token
+        const token = window.authUtils?.getAuthToken();
         if (!token) {
             console.warn('⚠️ No access token found, skipping credit load');
             return;
         }
 
         console.log('📊 Loading credit info...');
-        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
