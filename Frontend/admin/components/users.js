@@ -117,7 +117,7 @@ const UsersComponent = {
             ? '<span class="table-badge success">Active</span>'
             : '<span class="table-badge error">Inactive</span>';
 
-        const createdDate = new Date(user.created_at).toLocaleDateString();
+        const createdDate = formatDateDDMMYYYY(user.created_at);
 
         return `
             <tr>

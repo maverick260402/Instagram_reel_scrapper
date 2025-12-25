@@ -159,7 +159,7 @@ const LogsComponent = {
      * Render single log row
      */
     renderLogRow(log) {
-        const timestamp = new Date(log.created_at).toLocaleString();
+        const timestamp = formatDateTimeDDMMYYYY(log.created_at);
         const eventBadge = this.getEventBadge(log.event_type);
         const details = log.details ? JSON.stringify(log.details, null, 2) : 'N/A';
         const shortDetails = details.length > 50 ? details.substring(0, 50) + '...' : details;

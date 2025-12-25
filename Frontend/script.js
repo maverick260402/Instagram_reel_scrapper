@@ -818,7 +818,7 @@ function renderJobHistory() {
     }
 
     jobsList.innerHTML = jobHistory.map(job => {
-        const timestamp = new Date(job.timestamp).toLocaleString();
+        const timestamp = formatDateTimeDDMMYYYY(job.timestamp);
         const duration = job.duration ? formatDuration(job.duration) : 'N/A';
         const successCount = job.results ? job.results.filter(r => r.status === 'success').length : 0;
         const failedCount = job.results ? job.results.filter(r => r.status === 'failed').length : 0;

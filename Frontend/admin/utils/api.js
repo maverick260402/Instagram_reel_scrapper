@@ -126,6 +126,13 @@ class AdminAPI {
         return await this.request('/api/admin/instagram-accounts');
     }
 
+    async createInstagramAccount(accountData) {
+        return await this.request('/api/admin/instagram-accounts', {
+            method: 'POST',
+            body: JSON.stringify(accountData)
+        });
+    }
+
     async updateInstagramAccountCookies(accountId, cookies) {
         return await this.request(`/api/admin/instagram-accounts/${accountId}/cookies`, {
             method: 'PUT',

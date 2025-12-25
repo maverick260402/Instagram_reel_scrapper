@@ -11,13 +11,14 @@ from credit_system import reset_all_daily_credits
 from account_rotation import reset_daily_counts
 from crud import create_activity_log
 import logging
+import pytz  # For IST timezone configuration
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global scheduler instance
-scheduler = AsyncIOScheduler()
+# Global scheduler instance configured for IST (Indian Standard Time)
+scheduler = AsyncIOScheduler(timezone=pytz.timezone('Asia/Kolkata'))
 
 
 async def daily_reset_job():
@@ -95,7 +96,8 @@ def start_scheduler():
     # Start the scheduler
     scheduler.start()
     logger.info("[OK] Scheduler started successfully")
-    logger.info("Daily reset job scheduled for 00:00 (midnight) every day")
+    logger.info("Timezone: Asia/Kolkata (IST - Indian Standard Time)")
+    logger.info("Daily reset job scheduled for 00:00 IST (midnight) every day")
 
 
 def stop_scheduler():

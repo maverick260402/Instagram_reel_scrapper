@@ -275,18 +275,18 @@ async def get_user_details(
         # Get recent jobs
         recent_jobs = db.query(models.ScrapingJob).filter(
             models.ScrapingJob.user_id == user_id
-        ).order_by(desc(models.ScrapingJob.created_at)).limit(10).all()
+        ).order_by(desc(models.ScrapingJob.start_time)).limit(10).all()
 
         recent_jobs_list = []
         for job in recent_jobs:
             recent_jobs_list.append({
                 "job_id": job.job_id,
                 "status": job.status,
-                "target_usernames": job.target_usernames,
-                "reels_scraped": job.reels_scraped,
+                "target_usernames": job.usernames,
+                "reels_scraped": len(job.reels),
                 "credits_consumed": job.credits_consumed,
-                "created_at": job.created_at,
-                "completed_at": job.completed_at
+                "created_at": job.start_time,
+                "completed_at": job.end_time
             })
 
         return {
@@ -856,7 +856,7 @@ async def get_system_overview(
         today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
         today_jobs = db.query(func.count(models.ScrapingJob.id)).filter(
-            models.ScrapingJob.created_at >= today_start
+            models.ScrapingJob.start_time >= today_start
         ).scalar()
 
         today_reels = db.query(func.count(models.ScrapedReel.id)).filter(
@@ -993,9 +993,17 @@ async def get_performance_metrics(
             })
 
         # Average reels per job
-        avg_reels = db.query(func.avg(models.ScrapingJob.reels_scraped)).filter(
+        total_reels = db.query(func.count(models.ScrapedReel.id)).join(
+            models.ScrapingJob
+        ).filter(
             models.ScrapingJob.status == "completed"
-        ).scalar()
+        ).scalar() or 0
+
+        completed_jobs = db.query(func.count(models.ScrapingJob.id)).filter(
+            models.ScrapingJob.status == "completed"
+        ).scalar() or 0
+
+        avg_reels = total_reels / completed_jobs if completed_jobs > 0 else 0
 
         return {
             "account_distribution": account_stats,

@@ -1,8 +1,26 @@
 # Instagram Reel Scraper - Complete Documentation
 
-**Version:** 3.0 (Phase 3 Complete)
-**Last Updated:** December 2025
+**Version:** 3.0.4 (IST Timezone & Date Format Fixes)
+**Last Updated:** December 25, 2025
 **Status:** Production Ready ✅
+
+**Recent Updates (v3.0.4):**
+- ✅ **CRITICAL FIX:** Daily reset now runs at IST midnight (Indian Standard Time)
+- ✅ All dates now display in DD-MM-YYYY format (Indian standard)
+- ✅ Timestamps show in 24-hour format (DD-MM-YYYY HH:MM:SS)
+- ✅ Fixed timezone mismatch causing incorrect daily usage tracking
+- ✅ Added manual reset command for immediate testing
+- ✅ Consistent date formatting across entire application
+
+**Previous Updates (v3.0.3):**
+- ✅ Replaced all emoji icons with professional SVG graphics
+- ✅ Removed empty logo circle above Admin Panel title
+- ✅ Fixed notification panel visibility with proper styling
+- ✅ Added color-coded SVG icons for all activity types
+- ✅ Improved notification bell visibility (white icon)
+- ✅ Enhanced sidebar navigation with proper icons
+- ✅ Updated toast notifications with SVG icons
+- ✅ Consistent design language matching user dashboard
 
 ---
 
@@ -25,6 +43,7 @@
 - [Troubleshooting](#troubleshooting)
 - [Security](#security)
 - [Contributing](#contributing)
+- [Changelog](#changelog)
 
 ---
 
@@ -69,7 +88,9 @@ Instagram Reel Scraper is a full-stack web application designed for scraping Ins
 ### Technical Features
 - **Account Rotation** - Intelligent selection of least-used Instagram account
 - **Cookie Management** - Automated cookie refresh every 5 days
-- **Daily Resets** - Automatic credit and counter reset at midnight
+- **Daily Resets** - Automatic credit and counter reset at midnight IST (Indian Standard Time)
+- **IST Timezone Support** - Scheduler configured for Asia/Kolkata timezone
+- **DD-MM-YYYY Date Format** - Indian standard date formatting throughout application
 - **Rate Limiting** - Built-in protection against Instagram blocks
 - **Database Views** - Optimized queries for analytics
 
@@ -508,6 +529,7 @@ Instagram_reel_scrapper/
 - idx_activity_logs_user_id
 
 **Event Types:**
+- account_created
 - scrape_started
 - scrape_success
 - scrape_failed
@@ -858,6 +880,68 @@ python remote_cookie_updater.py
    - Stop if runs longer than 1 hour
 
 ### API Endpoints (Phase 2)
+
+#### POST /api/admin/instagram-accounts
+
+Create new Instagram account in the pool.
+
+**Headers:**
+```
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "username": "new_instagram_account",
+  "email": "newaccount@gmail.com",
+  "password": "securepassword123"
+}
+```
+
+**Response (201):**
+```json
+{
+  "status": "success",
+  "message": "Instagram account 'new_instagram_account' created successfully",
+  "account": {
+    "id": 4,
+    "username": "new_instagram_account",
+    "email": "newaccount@gmail.com",
+    "is_active": true,
+    "is_paused": false,
+    "daily_scrape_count": 0,
+    "total_scrapes": 0,
+    "success_count": 0,
+    "failure_count": 0,
+    "cookies_updated_at": null,
+    "created_at": "2025-12-24T10:30:00"
+  }
+}
+```
+
+**Error (409):**
+```json
+{
+  "detail": "Instagram account with username 'new_instagram_account' already exists"
+}
+```
+
+**Error (422):**
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "email"],
+      "msg": "value is not a valid email address",
+      "type": "value_error.email"
+    }
+  ]
+}
+```
+
+---
 
 #### POST /api/admin/instagram-accounts/{account_id}/cookies
 
@@ -1794,10 +1878,34 @@ Get system overview statistics.
 - Success Rate: Progress bar with percentage
 - Last Used: Timestamp
 
+**Create New Account:**
+
+*Professional UI matching Export CSV button design with improved modal form*
+
+1. Click "➕ Add Instagram Account" button (purple button with plus icon)
+2. Modal opens (650px width for optimal visibility)
+3. Fill in form with clearly labeled fields:
+   - Instagram Username (3+ characters, required)
+   - Instagram Email (valid email, required)
+   - Instagram Password (8+ characters, required)
+4. Check confirmation checkbox (acknowledging password storage)
+5. Click "Create Account" button (styled to match dashboard buttons)
+6. Account appears in table with no cookies initially
+7. Use cookie update feature to add valid cookies
+8. Account becomes available in rotation pool
+
+**Design Features:**
+- Button styled identically to "Export CSV" from user dashboard
+- Modal uses proper CSS classes for consistent styling
+- All form fields fully visible (no overflow)
+- Professional close button (×) in top-right
+- Clean, organized layout with proper spacing
+- Cancel and Create Account buttons properly aligned
+
 **Actions:**
 - Click username to view details
 - Pause/Resume account
-- Update cookies (coming soon in UI)
+- Update cookies via cookie update modal
 
 ### Activity Logs
 
@@ -1826,6 +1934,7 @@ Get system overview statistics.
 - Details: JSON object (hover to see full)
 
 **Event Types:**
+- account_created
 - scrape_started
 - scrape_success
 - scrape_failed
@@ -1917,19 +2026,56 @@ from credit_system import update_user_credit_limit
 update_user_credit_limit(db, user_id=1, new_limit=5000)
 ```
 
-### Changing Reset Time
+### Scheduler Timezone Configuration
 
-**Default:** Midnight (00:00) server time
+**Default:** Midnight (00:00) IST (Indian Standard Time - Asia/Kolkata)
+
+**Current Configuration:**
+```python
+# Backend/scheduler.py (line 21)
+scheduler = AsyncIOScheduler(timezone=pytz.timezone('Asia/Kolkata'))
+```
+
+**To Change Timezone:**
+
+Edit `Backend/scheduler.py`:
+```python
+import pytz
+
+# For a different timezone (e.g., US Eastern Time)
+scheduler = AsyncIOScheduler(timezone=pytz.timezone('US/Eastern'))
+
+# Or using Python 3.9+ built-in zoneinfo
+from zoneinfo import ZoneInfo
+scheduler = AsyncIOScheduler(timezone=ZoneInfo('America/New_York'))
+```
+
+**Available Timezones:**
+- IST (India): `'Asia/Kolkata'`
+- UTC: `'UTC'`
+- US Eastern: `'US/Eastern'` or `'America/New_York'`
+- UK: `'Europe/London'`
+- Full list: [IANA Time Zone Database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+
+**To Change Reset Time (within same timezone):**
 
 Edit `Backend/scheduler.py`:
 ```python
 scheduler.add_job(
     daily_reset_job,
-    trigger=CronTrigger(hour=2, minute=30),  # 2:30 AM instead
+    trigger=CronTrigger(hour=2, minute=30),  # 2:30 AM IST instead of midnight
     id='daily_reset',
     name='Daily Credit and Usage Counter Reset',
     replace_existing=True
 )
+```
+
+**Manual Reset Command:**
+
+To reset counters immediately without waiting for midnight:
+```bash
+cd Backend
+python -c "from scheduler import run_manual_reset; run_manual_reset()"
 ```
 
 ### Changing Cookie Update Frequency
@@ -1992,7 +2138,62 @@ app.add_middleware(
 
 ### Common Issues
 
-#### 1. "No access token found" in Console
+#### 1. "module 'crud' has no attribute 'log_activity'" Error
+
+**Symptom:** When creating Instagram account via admin panel, error appears: "Failed to create Instagram account: module 'crud' has no attribute 'log_activity'"
+
+**Cause:** Incorrect function name in backend code
+
+**Solution:**
+This has been fixed. The correct function is `crud.create_activity_log()` not `crud.log_activity()`. If you encounter this error:
+1. Check [Backend/app.py:947](Backend/app.py) - should use `crud.create_activity_log()`
+2. Restart backend server: `python app.py`
+3. Try creating account again
+
+**Fixed in:** Version 3.0.1 (December 2025)
+
+---
+
+#### 2. Admin Dashboard 500 Error - "ScrapingJob has no attribute 'created_at'"
+
+**Symptom:** When opening admin panel, console shows errors:
+- `GET /api/admin/stats/overview 500 (Internal Server Error)`
+- `Error: Failed to fetch system overview: type object 'ScrapingJob' has no attribute 'created_at'`
+
+**Cause:** Backend code using incorrect field names for ScrapingJob model
+
+**Solution:**
+This has been fixed in version 3.0.2. The correct field names are:
+- `start_time` (not `created_at`)
+- `end_time` (not `completed_at`)
+- `usernames` (not `target_usernames`)
+- `len(job.reels)` for count (not `reels_scraped`)
+
+If you encounter this error:
+1. Check [Backend/admin_routes.py](Backend/admin_routes.py) for correct field names
+2. Restart backend server: `python app.py`
+3. Refresh admin panel in browser
+
+**Fixed in:** Version 3.0.2 (December 2025)
+
+---
+
+#### 3. User Details Modal Error - "'ScrapingJob' object has no attribute 'target_usernames'"
+
+**Symptom:** When clicking "Details" button in admin Users tab, console shows:
+- `GET /api/admin/users/{id} 500 (Internal Server Error)`
+- `Error: Failed to fetch user details: 'ScrapingJob' object has no attribute 'target_usernames'`
+
+**Cause:** Same as issue #2 - incorrect field name references
+
+**Solution:**
+Fixed in version 3.0.2. If encountered, verify backend uses correct field names and restart server.
+
+**Fixed in:** Version 3.0.2 (December 2025)
+
+---
+
+#### 4. "No access token found" in Console
 
 **Symptom:** Credit meter shows 0/2000 but doesn't update
 
@@ -2004,29 +2205,55 @@ app.add_middleware(
 3. Hard refresh (Ctrl+Shift+R)
 4. Check if `authToken` exists in localStorage (F12 → Application → Local Storage)
 
-#### 2. Credits Not Resetting at Midnight
+#### 5. Daily Usage Showing Aggregate Totals / Credits Not Resetting at Midnight
 
-**Symptom:** Credits still showing used from previous day
+**Symptom:**
+- Admin panel shows high daily usage numbers (e.g., 60, 272) that don't reset
+- User credits still showing used from previous day after midnight IST
+- "Today's" usage shows cumulative data from multiple days
 
-**Cause:** Scheduler not running or timezone issue
+**Cause:** Timezone mismatch - Reset happening at server midnight instead of IST midnight
 
-**Solution:**
+**Solution (FIXED in v3.0.4):**
+
+The scheduler is now configured for IST timezone. If you upgraded from an older version:
+
+**Step 1: Verify Scheduler Timezone**
 ```bash
+# Restart backend server to load new timezone config
 cd Backend
-python scheduler.py  # Test manual reset
+python app.py
 ```
 
-Check logs:
+Look for this log message:
+```
+[OK] Scheduler started successfully
+Timezone: Asia/Kolkata (IST - Indian Standard Time)
+Daily reset job scheduled for 00:00 IST (midnight) every day
+```
+
+**Step 2: Manual Reset (Clear Old Data)**
+```bash
+cd Backend
+python -c "from scheduler import run_manual_reset; run_manual_reset()"
+```
+
+Expected output:
 ```
 [OK] Reset credits for X user(s)
 [OK] Reset daily counts for Y Instagram account(s)
 ```
 
-If scheduler not running:
-- Check `python app.py` logs for "Daily reset scheduler started"
-- Restart backend server
+**Step 3: Verify Results**
+- Admin Panel → Instagram Accounts → Daily Usage should show **0**
+- Admin Panel → Users → Credits should show **0 / [limit]**
+- Total Scrapes remain unchanged (lifetime counter)
 
-#### 3. Scraping Fails - No Reels Scraped
+**Note:** After manual reset, automatic resets will happen at midnight IST every night.
+
+**Fixed in:** Version 3.0.4 (December 25, 2025)
+
+#### 6. Scraping Fails - No Reels Scraped
 
 **Symptom:** Job completes but 0 reels scraped
 
@@ -2079,7 +2306,7 @@ response = requests.post(
 )
 ```
 
-#### 4. "All Instagram accounts are exhausted"
+#### 7. "All Instagram accounts are exhausted"
 
 **Symptom:** Can't start scraping job
 
@@ -2110,7 +2337,7 @@ resume_account(db, account_id=1)
 
 Or add new accounts.
 
-#### 5. Database Connection Failed
+#### 8. Database Connection Failed
 
 **Error:** `could not connect to server: Connection refused`
 
@@ -2132,7 +2359,7 @@ netstat -ano | findstr :5432
 lsof -i :5432
 ```
 
-#### 6. Admin Panel Won't Load
+#### 9. Admin Panel Won't Load
 
 **Symptom:** Blank page or "Failed to load profile"
 
@@ -2146,7 +2373,7 @@ psql -U scraper_user -d instagram_scraper -c "SELECT * FROM admin_users;"
 4. Check browser console (F12) for errors
 5. Try different browser
 
-#### 7. Playwright Login Fails (Cookie Updater)
+#### 10. Playwright Login Fails (Cookie Updater)
 
 **Error:** "Login failed" or "Error during login"
 
@@ -2161,7 +2388,7 @@ psql -U scraper_user -d instagram_scraper -c "SELECT * FROM admin_users;"
 - Check if 2FA is enabled (not supported)
 - Use valid Instagram credentials
 
-#### 8. Rate Limiting / Blocked Requests
+#### 11. Rate Limiting / Blocked Requests
 
 **Symptom:** Instagram returns errors or empty responses
 
@@ -2174,7 +2401,7 @@ psql -U scraper_user -d instagram_scraper -c "SELECT * FROM admin_users;"
 - Wait 30-60 minutes before retrying
 - Add more Instagram accounts to pool
 
-#### 9. Charts Not Displaying (Admin Panel)
+#### 12. Charts Not Displaying (Admin Panel)
 
 **Symptom:** Empty chart areas
 
@@ -2185,7 +2412,7 @@ psql -U scraper_user -d instagram_scraper -c "SELECT * FROM admin_users;"
 4. Inspect network tab for failed API calls
 5. Clear browser cache
 
-#### 10. Database Migration Fails
+#### 13. Database Migration Fails
 
 **Error:** `column "created_at" does not exist`
 
@@ -2355,6 +2582,221 @@ python test_phase2.py
 - [ ] CLI tool
 - [ ] Docker compose for full stack
 - [ ] Kubernetes deployment config
+
+---
+
+## 📝 Changelog
+
+### Version 3.0.4 (December 25, 2025)
+
+**CRITICAL FIX: IST Timezone & Date Format Standardization**
+
+**Timezone Configuration:**
+- ✅ **Fixed daily reset timezone to IST (Indian Standard Time - Asia/Kolkata)**
+  - Previous: Reset at server midnight (likely UTC ~5:30 AM IST)
+  - Now: Reset at **00:00:00 IST** (midnight IST)
+  - Added `timezone=pytz.timezone('Asia/Kolkata')` to AsyncIOScheduler
+
+- ✅ Enhanced scheduler logging with timezone information
+  - Logs now show "Timezone: Asia/Kolkata (IST - Indian Standard Time)"
+  - Clear indication of scheduled reset time in IST
+
+**Date Format Standardization:**
+- ✅ **All dates now display in DD-MM-YYYY format (Indian standard)**
+  - Created global date formatter utility (`Frontend/utils/dateFormatter.js`)
+  - Replaced all US-format dates (MM/DD/YYYY) with DD-MM-YYYY
+  - Timestamps use 24-hour format: DD-MM-YYYY HH:MM:SS
+
+- ✅ Consistent date formatting across entire application:
+  - User dashboard job tracker: DD-MM-YYYY HH:MM:SS
+  - Analytics page: DD-MM-YYYY HH:MM:SS
+  - Admin panel users tab: DD-MM-YYYY
+  - Admin panel accounts tab: DD-MM-YYYY HH:MM:SS
+  - Admin panel logs tab: DD-MM-YYYY HH:MM:SS
+  - Admin panel stats charts: DD-MM-YYYY
+
+**Manual Reset Command:**
+- ✅ Added quick reset command for immediate testing:
+  ```bash
+  python -c "from scheduler import run_manual_reset; run_manual_reset()"
+  ```
+
+**Files Modified:**
+- `Backend/scheduler.py` - Added IST timezone configuration
+- `Frontend/utils/dateFormatter.js` - **NEW FILE** - Global date formatting functions
+- `Frontend/script.js` - Removed ES6 imports, use global functions
+- `Frontend/analytics.js` - Removed ES6 imports, use global functions
+- `Frontend/admin/components/users.js` - Removed ES6 imports, use global functions
+- `Frontend/admin/components/accounts.js` - Removed ES6 imports, use global functions
+- `Frontend/admin/components/logs.js` - Removed ES6 imports, use global functions
+- `Frontend/admin/components/stats.js` - Removed ES6 imports, use global functions
+- `Frontend/index.html` - Load dateFormatter.js as global script
+- `Frontend/admin/index.html` - Load dateFormatter.js as global script
+- `CLAUDE.md` - Documentation updates
+
+**Impact:**
+- ✅ Daily reset now happens at correct IST midnight
+- ✅ No more timezone confusion about "today's" usage
+- ✅ Dates easy to read for Indian users (DD-MM-YYYY)
+- ✅ Consistent 24-hour time format throughout
+- ✅ Manual reset available for immediate testing
+- ✅ Clear scheduler timezone logging
+
+**Upgrade Notes:**
+If upgrading from v3.0.3 or earlier:
+1. Restart backend server to load new timezone config
+2. Run manual reset to clear accumulated daily counters
+3. Hard refresh browser (Ctrl+Shift+R) to load new date formatting
+
+---
+
+### Version 3.0.3 (December 25, 2025)
+
+**Admin Panel Design Enhancements:**
+- Replaced all emoji/text icons with professional SVG graphics throughout admin panel
+  - Dashboard overview cards now use proper SVG icons (users, accounts, reels, success rate)
+  - Sidebar navigation icons updated (dashboard, users, accounts, logs, statistics)
+  - Notification bell icon now white (#ffffff) for better visibility
+  - Activity/notification items use color-coded SVG icons
+  - Toast notifications use SVG icons (success, error, warning, info)
+
+**UI Improvements:**
+- Removed empty purple logo circle above "Admin Panel" title
+  - Set `.sidebar-logo { display: none; }` for cleaner look
+
+- Enhanced notification panel visibility and styling
+  - Added purple border (`border: 2px solid var(--accent-purple)`)
+  - Increased max-height to 500px
+  - Added border-radius for modern appearance
+  - Created dedicated CSS classes for notification items
+  - Replaced inline styles with semantic class names
+  - Added `.notification-empty` for empty state
+
+**Icon System:**
+- Created comprehensive SVG icon library with color coding:
+  - Purple (#8b5cf6): scrape_started, user_created, account_rotated, daily_reset
+  - Green (#10b981): scrape_success, cookies_updated, account_created
+  - Red (#ef4444): scrape_failed
+  - Yellow (#f59e0b): user_updated, credits_deducted
+  - Gray (#9ca3af): default fallback
+
+**Files Modified:**
+- `Frontend/admin/index.html` - Updated all icon SVGs, removed logo
+- `Frontend/admin/admin.css` - Added icon CSS classes, notification styling
+- `Frontend/admin/admin.js` - Updated notification rendering
+- `Frontend/admin/components/stats.js` - Replaced emoji icons with SVG
+- `CLAUDE.md` - Documentation updates
+
+**Impact:**
+- ✅ Professional, consistent design matching user dashboard
+- ✅ All icons clearly visible with proper colors
+- ✅ Notification panel fully functional and styled
+- ✅ No more empty circles or missing emojis
+- ✅ Improved accessibility and visual hierarchy
+
+---
+
+### Version 3.0.2 (December 24, 2025)
+
+**Critical Bug Fixes:**
+- Fixed admin dashboard `/api/admin/stats/overview` 500 error
+  - Changed `ScrapingJob.created_at` → `ScrapingJob.start_time` (lines 278, 859)
+  - Changed `job.created_at` → `job.start_time` (line 288)
+  - Changed `job.completed_at` → `job.end_time` (line 289)
+  - Error resolved: "type object 'ScrapingJob' has no attribute 'created_at'"
+
+- Fixed user details modal 500 error
+  - Changed `job.target_usernames` → `job.usernames` (line 285)
+  - Changed `job.reels_scraped` → `len(job.reels)` (line 286)
+  - Error resolved: "'ScrapingJob' object has no attribute 'target_usernames'"
+
+- Fixed average reels calculation in statistics
+  - Replaced invalid `func.avg(models.ScrapingJob.reels_scraped)` query
+  - Implemented proper calculation using joined query to `ScrapedReel` table
+  - Now correctly calculates: total_reels / completed_jobs
+
+**Database Schema Alignment:**
+- Corrected all field references to match actual database schema:
+  - ✅ `usernames` (not `target_usernames`)
+  - ✅ `start_time` (not `created_at`)
+  - ✅ `end_time` (not `completed_at`)
+  - ✅ `len(job.reels)` for scraped count (no direct `reels_scraped` field)
+
+**Files Modified:**
+- `Backend/admin_routes.py` - Fixed 7 incorrect field references
+- `CLAUDE.md` - Documentation updates
+
+**Impact:**
+- ✅ Admin dashboard now loads without errors
+- ✅ System overview statistics display correctly
+- ✅ User details modal works properly
+- ✅ All admin panel features fully operational
+
+---
+
+### Version 3.0.1 (December 24, 2025)
+
+**UI/UX Improvements:**
+- Redesigned "Add Instagram Account" button
+  - Now matches "Export CSV" button design from user dashboard
+  - Added professional SVG plus icon
+  - Uses proper `btn btn-primary` CSS classes
+  - Purple background (#8b5cf6) with smooth hover effects
+
+- Improved "Add Instagram Account" Modal Form
+  - Increased width from 500px to 650px (no more content overflow)
+  - Added `.modal-body` wrapper for proper structure
+  - Replaced inline styles with proper CSS classes
+  - Fixed close button to use `.modal-close` class
+  - Added clean form labels with `.form-label` class
+  - Added helper text with `.form-hint` class
+  - Improved checkbox layout with `.checkbox-label` class
+  - Professional button alignment (Cancel left, Create Account right)
+
+- Removed INFO Section
+  - Deleted useless "API Endpoint: localhost:8080" section from user dashboard
+  - Cleaned up unused CSS
+
+**Bug Fixes:**
+- Fixed activity logging error in Instagram account creation
+  - Changed `crud.log_activity()` to `crud.create_activity_log()`
+  - Error: "module 'crud' has no attribute 'log_activity'" is now resolved
+  - Activity logs now properly record `account_created` events
+
+**CSS Improvements:**
+- Added 8 new CSS classes for consistent styling:
+  - `.form-label` - Form field labels
+  - `.form-hint` - Helper text below inputs
+  - `.btn.btn-primary` - Primary action buttons
+  - `.btn.btn-secondary` - Secondary action buttons
+  - `.error-message` - Error message styling
+  - `.modal-footer` - Modal footer with button layout
+  - `.checkbox-label` - Checkbox with label styling
+- Removed conflicting modal-specific CSS overrides
+- All styles now use CSS custom properties (variables)
+
+**Documentation:**
+- Updated admin panel guide with new design features
+- Added troubleshooting entry for log_activity error
+- Updated version number to 3.0.1
+- Added recent updates section at top of documentation
+
+**Files Modified:**
+- `Frontend/admin/components/accounts.js` - Button and modal redesign
+- `Frontend/admin/admin.css` - New CSS classes and cleanup
+- `Frontend/index.html` - Removed INFO section
+- `Frontend/styles.css` - Removed INFO section CSS
+- `Backend/app.py` - Fixed activity logging function name
+- `CLAUDE.md` - Documentation updates
+
+### Version 3.0 (December 18, 2025)
+
+**Phase 3 Complete:**
+- Admin panel with user management
+- Instagram account pool monitoring
+- Activity logs viewer
+- System statistics dashboard
+- Database indexes and views for performance
 
 ---
 

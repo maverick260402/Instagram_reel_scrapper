@@ -906,6 +906,85 @@ async def bulk_update_instagram_cookies(
         )
 
 
+@app.post("/api/admin/instagram-accounts", status_code=201)
+async def create_instagram_account_endpoint(
+    account_data: schemas.InstagramAccountCreate,
+    db: Session = Depends(get_db),
+    admin: models.AdminUser = Depends(admin_routes.get_current_admin)
+):
+    """
+    Create a new Instagram account in the pool.
+    Only accessible by admin users.
+    """
+    try:
+        # Check for duplicate username
+        existing = crud.get_instagram_account_by_username(db, account_data.username)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Instagram account with username '{account_data.username}' already exists"
+            )
+
+        # Check for duplicate email
+        existing_email = db.query(models.InstagramAccount).filter(
+            models.InstagramAccount.email == account_data.email
+        ).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Instagram account with email '{account_data.email}' already exists"
+            )
+
+        # Create account
+        new_account = crud.create_instagram_account(
+            db=db,
+            username=account_data.username,
+            email=account_data.email,
+            password=account_data.password
+        )
+
+        # Log activity
+        crud.create_activity_log(
+            db=db,
+            event_type="account_created",
+            user_id=None,
+            instagram_account_id=new_account.id,
+            job_id=None,
+            details={
+                "username": new_account.username,
+                "email": new_account.email,
+                "created_by_admin_id": admin.id,
+                "created_by_admin_username": admin.username
+            }
+        )
+
+        return {
+            "status": "success",
+            "message": f"Instagram account '{new_account.username}' created successfully",
+            "account": {
+                "id": new_account.id,
+                "username": new_account.username,
+                "email": new_account.email,
+                "is_active": new_account.is_active,
+                "is_paused": new_account.is_paused,
+                "daily_scrape_count": new_account.daily_scrape_count,
+                "total_scrapes": new_account.total_scrapes,
+                "success_count": new_account.success_count,
+                "failure_count": new_account.failure_count,
+                "cookies_updated_at": new_account.cookies_updated_at,
+                "created_at": new_account.created_at.isoformat()
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create Instagram account: {str(e)}"
+        )
+
+
 @app.get("/api/admin/instagram-accounts")
 async def list_instagram_accounts(
     api_key: dict = Depends(verify_api_key),

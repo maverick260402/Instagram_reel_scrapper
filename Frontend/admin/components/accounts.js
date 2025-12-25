@@ -50,8 +50,29 @@ const AccountsComponent = {
         const container = document.getElementById('accountsTableContainer');
         if (!container) return;
 
+        const headerHTML = `
+            <div class="accounts-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="filter-controls">
+                    <label for="accountStatusFilter">Filter: </label>
+                    <select id="accountStatusFilter" class="filter-select">
+                        <option value="all">All Accounts</option>
+                        <option value="active">Active Only</option>
+                        <option value="paused">Paused Only</option>
+                        <option value="healthy">Healthy Cookies (0-5 days)</option>
+                        <option value="expired">Expired Cookies (>7 days)</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="AccountsComponent.showAddAccountModal()">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: middle; margin-right: 0.25rem;">
+                        <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Add Instagram Account
+                </button>
+            </div>
+        `;
+
         if (this.currentAccounts.length === 0) {
-            container.innerHTML = `
+            container.innerHTML = headerHTML + `
                 <div class="empty-state">
                     <div class="empty-state-icon">📱</div>
                     <div class="empty-state-text">No Instagram accounts in pool</div>
@@ -61,6 +82,7 @@ const AccountsComponent = {
         }
 
         const tableHTML = `
+            ${headerHTML}
             <table class="data-table">
                 <thead>
                     <tr>
@@ -109,7 +131,7 @@ const AccountsComponent = {
 
         // Last used
         const lastUsed = account.last_used_at
-            ? new Date(account.last_used_at).toLocaleDateString() + ' ' + new Date(account.last_used_at).toLocaleTimeString()
+            ? formatDateTimeDDMMYYYY(account.last_used_at)
             : 'Never';
 
         return `
@@ -378,5 +400,199 @@ const AccountsComponent = {
      */
     showError(message) {
         alert(`Error: ${message}`);
+    },
+
+    /**
+     * Render add account modal
+     */
+    renderAddAccountModal() {
+        return `
+            <div id="addAccountModal" class="modal" style="display: none;">
+                <div class="modal-content" style="max-width: 650px;">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Add Instagram Account</h3>
+                        <button class="modal-close" onclick="AccountsComponent.hideAddAccountModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addAccountForm" onsubmit="AccountsComponent.handleAddAccount(event)">
+                            <div class="form-group">
+                                <label class="form-label" for="accountUsername">Instagram Username *</label>
+                                <input
+                                    type="text"
+                                    id="accountUsername"
+                                    name="username"
+                                    class="form-input"
+                                    required
+                                    minlength="3"
+                                    maxlength="100"
+                                    placeholder="instagram_username"
+                                    autocomplete="off"
+                                />
+                                <small class="form-hint">Username for logging into Instagram</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="accountEmail">Instagram Email *</label>
+                                <input
+                                    type="email"
+                                    id="accountEmail"
+                                    name="email"
+                                    class="form-input"
+                                    required
+                                    placeholder="account@gmail.com"
+                                    autocomplete="off"
+                                />
+                                <small class="form-hint">Email associated with Instagram account</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="accountPassword">Instagram Password *</label>
+                                <input
+                                    type="password"
+                                    id="accountPassword"
+                                    name="password"
+                                    class="form-input"
+                                    required
+                                    minlength="8"
+                                    placeholder="Enter password"
+                                    autocomplete="new-password"
+                                />
+                                <small class="form-hint">Minimum 8 characters (stored for cookie automation)</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="form-checkbox" id="confirmStorage" required />
+                                    <span>I understand this password will be stored for automated cookie extraction</span>
+                                </label>
+                            </div>
+
+                            <div id="addAccountError" class="error-message" style="display: none;"></div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" onclick="AccountsComponent.hideAddAccountModal()">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="addAccountSubmitBtn">
+                                    Create Account
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Show add account modal
+     */
+    showAddAccountModal() {
+        // Ensure modal exists in DOM
+        let modal = document.getElementById('addAccountModal');
+        if (!modal) {
+            // Insert modal into page
+            const container = document.getElementById('accountsTableContainer');
+            const modalHTML = this.renderAddAccountModal();
+            container.insertAdjacentHTML('beforebegin', modalHTML);
+            modal = document.getElementById('addAccountModal');
+        }
+
+        // Reset form
+        const form = document.getElementById('addAccountForm');
+        if (form) form.reset();
+
+        // Hide error
+        const errorDiv = document.getElementById('addAccountError');
+        if (errorDiv) errorDiv.style.display = 'none';
+
+        // Show modal
+        modal.style.display = 'flex';
+    },
+
+    /**
+     * Hide add account modal
+     */
+    hideAddAccountModal() {
+        const modal = document.getElementById('addAccountModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    },
+
+    /**
+     * Handle add account form submission
+     */
+    async handleAddAccount(event) {
+        event.preventDefault();
+
+        // Get form values
+        const username = document.getElementById('accountUsername').value.trim();
+        const email = document.getElementById('accountEmail').value.trim();
+        const password = document.getElementById('accountPassword').value;
+        const confirmed = document.getElementById('confirmStorage').checked;
+
+        // Validation
+        if (!confirmed) {
+            this.showAddAccountError('Please confirm you understand password storage');
+            return;
+        }
+
+        if (username.length < 3) {
+            this.showAddAccountError('Username must be at least 3 characters');
+            return;
+        }
+
+        if (password.length < 8) {
+            this.showAddAccountError('Password must be at least 8 characters');
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = document.getElementById('addAccountSubmitBtn');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+
+        try {
+            // API call
+            const result = await api.createInstagramAccount({
+                username: username,
+                email: email,
+                password: password
+            });
+
+            // Success handling
+            this.hideAddAccountModal();
+            showNotification('Instagram account created successfully!', 'success');
+
+            // Refresh accounts table
+            await this.loadAccounts();
+
+        } catch (error) {
+            // Error handling
+            let errorMessage = 'Failed to create account';
+
+            if (error.message) {
+                errorMessage = error.message;
+            } else if (error.detail) {
+                errorMessage = error.detail;
+            }
+
+            this.showAddAccountError(errorMessage);
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    },
+
+    /**
+     * Show error in add account modal
+     */
+    showAddAccountError(message) {
+        const errorDiv = document.getElementById('addAccountError');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
     }
 };

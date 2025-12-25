@@ -214,7 +214,7 @@ const AdminPanel = {
             const notificationList = document.getElementById('notificationList');
             if (notificationList) {
                 if (logs.length === 0) {
-                    notificationList.innerHTML = '<div style="padding: 1rem; text-align: center; color: #9ca3af;">No notifications</div>';
+                    notificationList.innerHTML = '<div class="notification-empty">No recent notifications</div>';
                 } else {
                     notificationList.innerHTML = logs.map(log => this.renderNotificationItem(log)).join('');
                 }
@@ -233,15 +233,11 @@ const AdminPanel = {
         const time = StatsComponent.formatRelativeTime(log.created_at);
 
         return `
-            <div style="padding: 0.75rem; border-bottom: 1px solid #262626; cursor: pointer;"
-                 onmouseover="this.style.background='#0a0a0a'"
-                 onmouseout="this.style.background='transparent'">
-                <div style="display: flex; gap: 0.75rem; align-items: start;">
-                    <div style="font-size: 1.25rem;">${icon}</div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 500; font-size: 0.9rem; margin-bottom: 0.25rem;">${title}</div>
-                        <div style="font-size: 0.85rem; color: #9ca3af;">${time}</div>
-                    </div>
+            <div class="notification-item">
+                <div class="notification-item-icon">${icon}</div>
+                <div class="notification-item-content">
+                    <div class="notification-item-title">${title}</div>
+                    <div class="notification-item-time">${time}</div>
                 </div>
             </div>
         `;
@@ -275,12 +271,12 @@ function showNotification(message, type = 'info', duration = 4000) {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
 
-    // Select appropriate icon
+    // Select appropriate icon (SVG)
     const icons = {
-        success: '✓',
-        error: '✕',
-        warning: '⚠',
-        info: 'ℹ'
+        success: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.7088 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.76489 14.1003 1.98232 16.07 2.86" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 4L12 14.01L9 11.01" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        error: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#ef4444" stroke-width="2"/><path d="M15 9L9 15M9 9L15 15" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/></svg>',
+        warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18C1.64537 18.3024 1.55299 18.6453 1.55201 18.9945C1.55103 19.3437 1.64149 19.6871 1.81442 19.9905C1.98735 20.2939 2.23672 20.5467 2.53771 20.7239C2.83869 20.9011 3.18077 20.9962 3.53 21H20.47C20.8192 20.9962 21.1613 20.9011 21.4623 20.7239C21.7633 20.5467 22.0126 20.2939 22.1856 19.9905C22.3585 19.6871 22.449 19.3437 22.448 18.9945C22.447 18.6453 22.3546 18.3024 22.18 18L13.71 3.86C13.5317 3.56611 13.2807 3.32312 12.9812 3.15448C12.6817 2.98585 12.3437 2.89725 12 2.89725C11.6563 2.89725 11.3183 2.98585 11.0188 3.15448C10.7193 3.32312 10.4683 3.56611 10.29 3.86Z" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9V13" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="17" r="1" fill="#f59e0b"/></svg>',
+        info: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#8b5cf6" stroke-width="2"/><path d="M12 16V12M12 8H12.01" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     };
     const icon = icons[type] || icons.info;
 

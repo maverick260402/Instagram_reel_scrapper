@@ -44,6 +44,22 @@ class Token(BaseModel):
     user: UserResponse
 
 
+# ==================== Instagram Account Schemas ====================
+
+class InstagramAccountCreate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=100)
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=255)
+
+    @validator('username')
+    def validate_username(cls, v):
+        # Remove whitespace
+        v = v.strip()
+        if not v:
+            raise ValueError('Username cannot be empty')
+        return v
+
+
 # ==================== User Group Schemas ====================
 
 class UserGroupBase(BaseModel):
