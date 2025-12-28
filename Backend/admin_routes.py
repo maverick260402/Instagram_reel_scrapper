@@ -3,7 +3,7 @@ Admin Routes for Phase 3 - Admin Panel
 Provides endpoints for user management, statistics, and monitoring
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, desc, text
 from typing import Optional, List

@@ -3,6 +3,16 @@
  * Handles account pool monitoring and management
  */
 
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 const AccountsComponent = {
     currentAccounts: [],
     currentFilter: 'all',
@@ -27,6 +37,29 @@ const AccountsComponent = {
                 this.renderFilteredAccounts();
             });
         }
+
+        // Event delegation for table action buttons (prevents XSS via onclick)
+        document.addEventListener('click', (e) => {
+            const button = e.target.closest('[data-action]');
+            if (!button) return;
+
+            const action = button.dataset.action;
+            const accountId = parseInt(button.dataset.accountId, 10);
+
+            if (action === 'open-cookie') {
+                // Find account to get username safely
+                const account = this.currentAccounts.find(acc => acc.id === accountId);
+                if (account) {
+                    this.openCookieModal(accountId, account.username);
+                }
+            } else if (action === 'toggle-active') {
+                const newState = button.dataset.newState === 'true';
+                this.toggleActive(accountId, newState);
+            } else if (action === 'toggle-pause') {
+                const newState = button.dataset.newState === 'true';
+                this.togglePause(accountId, newState);
+            }
+        });
     },
 
     /**
@@ -134,10 +167,14 @@ const AccountsComponent = {
             ? formatDateTimeDDMMYYYY(account.last_used_at)
             : 'Never';
 
+        // Escape user-controlled data to prevent XSS
+        const safeUsername = escapeHtml(account.username);
+        const safeEmail = escapeHtml(account.email);
+
         return `
             <tr>
-                <td>${account.username}</td>
-                <td>${account.email}</td>
+                <td>${safeUsername}</td>
+                <td>${safeEmail}</td>
                 <td>${statusBadge}</td>
                 <td>${cookieHealth}</td>
                 <td>${account.daily_scrape_count}</td>
@@ -153,16 +190,16 @@ const AccountsComponent = {
                 <td style="font-size: 0.85rem;">${lastUsed}</td>
                 <td>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="table-action-btn" onclick="AccountsComponent.openCookieModal(${account.id}, '${account.username}')" title="Update account cookies">
+                        <button class="table-action-btn" data-action="open-cookie" data-account-id="${account.id}" title="Update account cookies">
                             🔑 Cookies
                         </button>
                         <button class="table-action-btn ${account.is_active ? 'active' : 'inactive'}"
-                                onclick="AccountsComponent.toggleActive(${account.id}, ${!account.is_active})"
+                                data-action="toggle-active" data-account-id="${account.id}" data-new-state="${!account.is_active}"
                                 title="${account.is_active ? 'Deactivate account' : 'Activate account'}">
                             ${account.is_active ? '✓ Active' : '✕ Inactive'}
                         </button>
                         <button class="table-action-btn ${account.is_paused ? 'paused' : ''}"
-                                onclick="AccountsComponent.togglePause(${account.id}, ${!account.is_paused})"
+                                data-action="toggle-pause" data-account-id="${account.id}" data-new-state="${!account.is_paused}"
                                 title="${account.is_paused ? 'Resume account' : 'Pause account'}">
                             ${account.is_paused ? '▶ Resume' : '⏸ Pause'}
                         </button>

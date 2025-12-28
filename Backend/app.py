@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Header
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, status, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, Response
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from typing import List, Dict, Optional
@@ -11,6 +11,9 @@ from datetime import datetime, timedelta
 import asyncio
 import io
 import csv
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Add Scripts directory to path
 scripts_dir = Path(__file__).parent / "Scripts"
@@ -48,21 +51,50 @@ app = FastAPI(
 jobs_db: Dict[str, dict] = {}
 
 # ==================== Instagram Cookie Configuration ====================
-# Instagram credentials for cookie extraction
-# TODO: Move these to environment variables for production
-INSTAGRAM_EMAIL = "jigglyphilcam@gmail.com"  # Set your Instagram email
-INSTAGRAM_PASSWORD = "Maverick15#"  # Set your Instagram password
+# Instagram credentials loaded from environment variables
+INSTAGRAM_EMAIL = settings.INSTAGRAM_EMAIL
+INSTAGRAM_PASSWORD = settings.INSTAGRAM_PASSWORD
 
-# Initialize global cookie manager
-cookie_manager = CookieManager(INSTAGRAM_EMAIL, INSTAGRAM_PASSWORD)
+# Initialize global cookie manager (only if credentials are configured)
+cookie_manager = None
+if INSTAGRAM_EMAIL and INSTAGRAM_PASSWORD:
+    cookie_manager = CookieManager(INSTAGRAM_EMAIL, INSTAGRAM_PASSWORD)
+else:
+    print("[WARN] Instagram credentials not configured in .env - cookie extraction fallback disabled")
 
-# CORS middleware
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+
+# Rate limit exceeded handler
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return Response(
+        content='{"detail": "Rate limit exceeded. Please try again later."}',
+        status_code=429,
+        media_type="application/json"
+    )
+
+
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
+# CORS middleware (restricted configuration)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS.split(","),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key"],
 )
 
 # Mount static files
@@ -125,7 +157,8 @@ async def health_check():
 # ==================== Authentication Endpoints ====================
 
 @app.post("/api/auth/signup", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
-async def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+async def signup(request: Request, user: schemas.UserCreate, db: Session = Depends(get_db)):
     """Register a new user"""
     # Check if email already exists
     if crud.get_user_by_email(db, user.email):
@@ -149,7 +182,8 @@ async def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/api/auth/login", response_model=schemas.Token)
-async def login(user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def login(request: Request, user_credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     """Login and get access token"""
     user = authenticate_user(db, user_credentials.email, user_credentials.password)
 
@@ -281,9 +315,11 @@ def run_scraping_job_with_db(
         if instagram_account.cookie_string:
             cookie_string = instagram_account.cookie_string
             print("[INFO] Using stored cookies from Instagram account")
-        else:
+        elif cookie_manager:
             print("[WARN] No cookies stored for account, using cookie manager...")
             cookie_string = cookie_manager.get_cookie()
+        else:
+            raise Exception("No cookies available and cookie manager not configured. Please update cookies for this account.")
 
         # Create job in database with Instagram account linkage
         db_job = crud.create_job(db, user_id, job_id, usernames, reel_count, instagram_account_id)
@@ -445,17 +481,19 @@ def run_scraping_job_with_db(
 
 
 @app.post("/api/scrape", response_model=schemas.JobStartResponse)
+@limiter.limit("10/minute")
 async def scrape_reels(
-    request: schemas.ScrapeRequest,
+    request: Request,
+    scrape_request: schemas.ScrapeRequest,
     background_tasks: BackgroundTasks,
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Start a scraping job (requires authentication, validates credits, uses account rotation)"""
     try:
-        usernames = request.usernames
-        reel_count = request.reel_count
-        group_id = request.group_id
+        usernames = scrape_request.usernames
+        reel_count = scrape_request.reel_count
+        group_id = scrape_request.group_id
 
         if not usernames:
             raise HTTPException(status_code=400, detail="No usernames provided")

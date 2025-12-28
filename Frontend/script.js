@@ -31,6 +31,14 @@ if (!authToken || !currentUser) {
     console.log('✅ User authenticated:', currentUser?.email);
 }
 
+// Security: HTML escape function to prevent XSS
+function escapeHtml(text) {
+    if (text === null || text === undefined) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // State management
 let usernames = [];
 let currentPage = localStorage.getItem('currentPage') || 'scraper';
@@ -315,15 +323,30 @@ function updateUsernamesList() {
 
     usernamesSection.style.display = 'block';
     usernamesList.innerHTML = usernames
-        .map(username => `
-            <div class="username-tag">
-                <span>@${username}</span>
-                <button class="remove-btn" onclick="removeUsername('${username}')" title="Remove">
-                    ×
-                </button>
-            </div>
-        `)
+        .map((username, index) => {
+            // Escape username to prevent XSS
+            const safeUsername = escapeHtml(username);
+            return `
+                <div class="username-tag">
+                    <span>@${safeUsername}</span>
+                    <button class="remove-btn" data-index="${index}" title="Remove">
+                        ×
+                    </button>
+                </div>
+            `;
+        })
         .join('');
+
+    // Add event delegation for remove buttons (prevents XSS via onclick)
+    usernamesList.querySelectorAll('.remove-btn[data-index]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index, 10);
+            const usernameToRemove = usernames[index];
+            if (usernameToRemove) {
+                removeUsername(usernameToRemove);
+            }
+        });
+    });
 }
 
 function updateScrapeButton() {

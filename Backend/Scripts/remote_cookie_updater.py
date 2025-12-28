@@ -2,6 +2,14 @@
 Remote Cookie Updater for Instagram Accounts
 Automatically extracts cookies using Playwright and updates the server
 Run this script on Windows PC every 5 days (via Task Scheduler)
+
+SECURITY NOTE: This script uses environment variables for sensitive credentials.
+Set these environment variables before running:
+  - COOKIE_UPDATER_SERVER_URL: The server URL (e.g., http://localhost:8080)
+  - COOKIE_UPDATER_API_KEY: Your API key (generate with generate_api_key.py)
+  - INSTAGRAM_EMAIL: Instagram account email
+  - INSTAGRAM_PASSWORD: Instagram account password
+  - INSTAGRAM_ACCOUNT_ID: Database ID of the Instagram account
 """
 
 from playwright.sync_api import sync_playwright
@@ -10,28 +18,31 @@ import json
 from datetime import datetime
 import time
 import sys
+import os
 
 # ==================== CONFIGURATION ====================
-# IMPORTANT: Update these values before running!
+# Load configuration from environment variables for security
 
-SERVER_URL = "http://localhost:8080"  # Change to your server URL (e.g., https://your-domain.com)
-API_KEY = "_SqyioaT9ItcqTEoJmqU38y_PHOeN5fk12asrMKC3Qs"  # Get this from generate_api_key.py
+SERVER_URL = os.getenv("COOKIE_UPDATER_SERVER_URL", "http://localhost:8080")
+API_KEY = os.getenv("COOKIE_UPDATER_API_KEY", "")
 
-# Instagram accounts to update
-# Get account IDs from the database or from /api/admin/instagram-accounts endpoint
-INSTAGRAM_ACCOUNTS = [
-    {
-        "id": 2,  # Database ID of the Instagram account
-        "email": "jigglyphilcam@gmail.com",
-        "password": "Maverick15#"
-    },
-    # Add more accounts here as needed:
-    # {
-    #     "id": 3,
-    #     "email": "account2@example.com",
-    #     "password": "password2"
-    # },
-]
+# Instagram accounts to update - loaded from environment variables
+# For multiple accounts, you can either:
+# 1. Run the script multiple times with different env vars
+# 2. Store account configs in a separate secure file (not in git)
+INSTAGRAM_ACCOUNTS = []
+
+# Load single account from environment variables if configured
+_account_id = os.getenv("INSTAGRAM_ACCOUNT_ID")
+_account_email = os.getenv("INSTAGRAM_EMAIL")
+_account_password = os.getenv("INSTAGRAM_PASSWORD")
+
+if _account_id and _account_email and _account_password:
+    INSTAGRAM_ACCOUNTS.append({
+        "id": int(_account_id),
+        "email": _account_email,
+        "password": _account_password
+    })
 
 # Essential cookies to extract (Instagram specific)
 ESSENTIAL_COOKIES = [
@@ -184,12 +195,19 @@ def main():
     print("=" * 70 + "\n")
 
     # Validate configuration
-    if API_KEY == "_SqyioaT9ItcqTEoJmqU38y_PHOeN5fk12asrMKC3Qs":
-        print("[WARNING] Using default API_KEY. Generate a new one for production!")
+    if not API_KEY:
+        print("[ERROR] COOKIE_UPDATER_API_KEY environment variable not set!")
+        print("Set it using: set COOKIE_UPDATER_API_KEY=your_api_key_here (Windows)")
+        print("Or: export COOKIE_UPDATER_API_KEY=your_api_key_here (Linux/Mac)")
         print("Generate an API key using: python generate_api_key.py create \"Cookie Updater\"")
+        sys.exit(1)
 
     if not INSTAGRAM_ACCOUNTS:
         print("[ERROR] No Instagram accounts configured!")
+        print("Set these environment variables:")
+        print("  INSTAGRAM_ACCOUNT_ID=<database_id>")
+        print("  INSTAGRAM_EMAIL=<account_email>")
+        print("  INSTAGRAM_PASSWORD=<account_password>")
         sys.exit(1)
 
     results = {

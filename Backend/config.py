@@ -7,9 +7,9 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: Optional[str] = None
-    
+
     # JWT Authentication
-    SECRET_KEY: str 
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
 
@@ -23,6 +23,13 @@ class Settings(BaseSettings):
 
     # User Limits
     MAX_GROUPS_PER_USER: int = 10
+
+    # Instagram Credentials (for cookie extraction fallback)
+    INSTAGRAM_EMAIL: Optional[str] = None
+    INSTAGRAM_PASSWORD: Optional[str] = None
+
+    # Cookie Updater API Key
+    COOKIE_UPDATER_API_KEY: Optional[str] = None
 
     class Config:
         env_file = ".env"
