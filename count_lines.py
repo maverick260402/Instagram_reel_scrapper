@@ -8,7 +8,7 @@ excluding tests, samples, and documentation.
 
 import os
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 
 def is_production_file(filepath: Path) -> bool:
@@ -102,7 +102,7 @@ def count_lines_in_file(filepath: Path) -> Tuple[int, int, int]:
         return 0, 0, 0
 
 
-def count_production_lines(root_dir: Path) -> Dict[str, any]:
+def count_production_lines(root_dir: Path) -> Dict[str, Any]:
     """
     Count lines in all production-ready files.
     
@@ -153,7 +153,7 @@ def count_production_lines(root_dir: Path) -> Dict[str, any]:
     }
 
 
-def print_report(stats: Dict[str, any]):
+def print_report(stats: Dict[str, Any]):
     """Print a formatted report of line counts."""
     print("\n" + "=" * 80)
     print("PRODUCTION-READY CODE LINE COUNT REPORT")
@@ -210,4 +210,4 @@ def main():
 
 
 if __name__ == '__main__':
-    exit_code = main()
+    main()
