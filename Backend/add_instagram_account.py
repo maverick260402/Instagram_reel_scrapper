@@ -70,9 +70,6 @@ if __name__ == "__main__":
     print("\nAdding first Instagram account...")
 
     success = add_account(
-        username="jigglyphilcam",
-        email="jigglyphilcam@gmail.com",
-        password="Maverick15#"
     )
 
     if success:
