@@ -24,9 +24,6 @@ import pandas as pd
 
 # ==================== CONFIGURATION ====================
 # Set your Instagram credentials here
-INSTAGRAM_EMAIL = "jigglyphilcam@gmail.com"  # TODO: Set your Instagram email/username
-INSTAGRAM_PASSWORD = "Maverick15#"  # TODO: Set your Instagram password
-
 # If credentials are empty, prompt user
 if not INSTAGRAM_EMAIL or not INSTAGRAM_PASSWORD:
     print("⚠️ Instagram credentials not set in script.")
