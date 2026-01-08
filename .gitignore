@@ -118,3 +118,6 @@ backup.sql
 
 # Sensitive scripts with credentials (security)
 Backend/Scripts/remote_cookie_updater.py
+
+repo_evaluator_helpers.py
+repo_evaluator.py
