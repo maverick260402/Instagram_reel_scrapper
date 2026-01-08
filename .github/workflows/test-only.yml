@@ -71,20 +71,31 @@ jobs:
         PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f migrations/001_multi_user_system.sql
         PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f migrations/002_phase3_indexes_views.sql
 
-    - name: Run Phase 1 Tests
+    - name: Run All Tests with pytest
+      env:
+        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
       run: |
         cd Backend
-        python test_phase1.py
+        pytest -v --cov=. --cov-report=xml --cov-report=term-missing
 
-    - name: Run Phase 2 Tests
-      run: |
-        cd Backend
-        python test_phase2.py
+    - name: Upload Coverage Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: |
+          Backend/coverage.xml
+          Backend/htmlcov/
+        retention-days: 30
 
-    - name: Run Phase 3 Tests
+    - name: Display Coverage Summary
+      if: always()
       run: |
         cd Backend
-        python test_phase3.py
+        if [ -f coverage.xml ]; then
+          echo "✅ Coverage report generated successfully"
+          grep -o 'line-rate="[^"]*"' coverage.xml | head -1
+        fi
 
     - name: Test Summary
       if: always()
@@ -92,10 +103,11 @@ jobs:
         echo "=================================="
         echo "Test Execution Summary"
         echo "=================================="
-        echo "✓ All test phases completed"
+        echo "✓ All test phases completed with pytest"
         echo "  - Phase 1: Database, models, account rotation, credit system"
         echo "  - Phase 2: Enhanced API, cookie endpoints"
         echo "  - Phase 3: Admin panel, statistics"
+        echo "  - New tests: Auth, Models, Config, CRUD, Utilities"
         echo "=================================="
 
     - name: Upload test results

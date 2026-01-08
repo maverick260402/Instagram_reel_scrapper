@@ -47,6 +47,7 @@ logs/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 .tox/
 .hypothesis/
@@ -119,5 +120,5 @@ backup.sql
 # Sensitive scripts with credentials (security)
 Backend/Scripts/remote_cookie_updater.py
 
-repo_evaluator_helpers.py
-repo_evaluator.py
+#repo_evaluator_helpers.py
+#repo_evaluator.py
