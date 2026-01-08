@@ -1,7 +1,5 @@
 # Instagram Reel Scraper
 
-![CI/CD Status](https://github.com/YOUR-USERNAME/Instagram_reel_scrapper/actions/workflows/ci-cd.yml/badge.svg)
-![Tests](https://github.com/YOUR-USERNAME/Instagram_reel_scrapper/actions/workflows/test-only.yml/badge.svg)
 
 A full-stack web application for scraping Instagram reel metadata with enterprise-grade features including multi-user support, credit-based usage limits, intelligent account rotation, and comprehensive admin controls.
 
