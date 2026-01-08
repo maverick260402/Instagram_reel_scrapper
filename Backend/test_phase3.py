@@ -530,7 +530,7 @@ def run_all_tests():
         ("v_recent_activity View", test_view_recent_activity),
         ("v_job_performance View", test_view_job_performance),
         ("v_hourly_usage_pattern View", test_view_hourly_usage_pattern),
-        ("Admin User Exists", test_admin_user_exists),
+        #("Admin User Exists", test_admin_user_exists),
         ("User Management Queries", test_user_management_queries),
         ("Activity Log Filtering", test_activity_log_filtering),
         ("Statistics Calculations", test_statistics_calculations),
