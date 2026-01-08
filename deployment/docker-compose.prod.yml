@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: instagram_scraper_db_prod
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scraper_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scraper_password_123}
+      POSTGRES_DB: ${POSTGRES_DB:-instagram_scraper}
+      # Performance tuning
+      POSTGRES_SHARED_BUFFERS: 256MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 1GB
+      POSTGRES_MAINTENANCE_WORK_MEM: 64MB
+      POSTGRES_CHECKPOINT_COMPLETION_TARGET: 0.9
+      POSTGRES_WAL_BUFFERS: 16MB
+      POSTGRES_DEFAULT_STATISTICS_TARGET: 100
+      POSTGRES_RANDOM_PAGE_COST: 1.1
+      POSTGRES_EFFECTIVE_IO_CONCURRENCY: 200
+      POSTGRES_WORK_MEM: 4MB
+      POSTGRES_MIN_WAL_SIZE: 1GB
+      POSTGRES_MAX_WAL_SIZE: 4GB
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      # Data persistence
+      - postgres_data:/var/lib/postgresql/data
+      # Custom PostgreSQL configuration (optional)
+      # - ./postgresql.conf:/etc/postgresql/postgresql.conf
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scraper_user} -d ${POSTGRES_DB:-instagram_scraper}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - scraper_network
+
+    # Resource limits (adjust based on your VPS specs)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Labels for organization
+    labels:
+      com.instagram-scraper.service: "database"
+      com.instagram-scraper.environment: "production"
+
+volumes:
+  postgres_data:
+    name: instagram_scraper_postgres_data
+    driver: local
+
+networks:
+  scraper_network:
+    name: instagram_scraper_network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16

@@ -1,0 +1,59 @@
+[Unit]
+Description=Instagram Reel Scraper - FastAPI Application
+Documentation=https://github.com/yourusername/Instagram_reel_scrapper
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=instagram-scraper
+Group=instagram-scraper
+
+# Working directory
+WorkingDirectory=/opt/instagram-scraper/Backend
+
+# Environment variables from .env file
+EnvironmentFile=/opt/instagram-scraper/.env
+
+# Wait for PostgreSQL to be ready before starting
+ExecStartPre=/bin/sleep 5
+
+# Start the application with uvicorn
+# Using 4 workers for better performance (adjust based on CPU cores)
+ExecStart=/opt/instagram-scraper/venv/bin/uvicorn app:app \
+    --host 0.0.0.0 \
+    --port 8080 \
+    --workers 4 \
+    --log-level info \
+    --access-log \
+    --use-colors
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitBurst=5
+StartLimitInterval=60
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/instagram-scraper/Backend/output_json /opt/instagram-scraper/logs
+
+# Resource limits (adjust based on your VPS specs)
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=append:/opt/instagram-scraper/logs/app.log
+StandardError=append:/opt/instagram-scraper/logs/error.log
+SyslogIdentifier=instagram-scraper
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,109 @@
+name: Tests Only
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r Backend/requirements.txt
+
+    - name: Wait for PostgreSQL
+      run: |
+        for i in {1..30}; do
+          pg_isready -h localhost -p 5432 -U test_user && break
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+
+    - name: Set up test environment
+      run: |
+        cd Backend
+        cat > .env << EOF
+        DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db
+        SECRET_KEY=test-secret-key-for-ci-only-not-for-production-use
+        ALGORITHM=HS256
+        ACCESS_TOKEN_EXPIRE_MINUTES=10080
+        ENVIRONMENT=testing
+        DEBUG=True
+        ALLOWED_ORIGINS=http://localhost:8080
+        MAX_REQUESTS_PER_MINUTE=60
+        EOF
+
+    - name: Run database migrations
+      run: |
+        cd Backend
+        PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f migrations/000_initial_schema.sql
+        PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f migrations/001_multi_user_system.sql
+        PGPASSWORD=test_password psql -h localhost -U test_user -d test_db -f migrations/002_phase3_indexes_views.sql
+
+    - name: Run Phase 1 Tests
+      run: |
+        cd Backend
+        python test_phase1.py
+
+    - name: Run Phase 2 Tests
+      run: |
+        cd Backend
+        python test_phase2.py
+
+    - name: Run Phase 3 Tests
+      run: |
+        cd Backend
+        python test_phase3.py
+
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "=================================="
+        echo "Test Execution Summary"
+        echo "=================================="
+        echo "✓ All test phases completed"
+        echo "  - Phase 1: Database, models, account rotation, credit system"
+        echo "  - Phase 2: Enhanced API, cookie endpoints"
+        echo "  - Phase 3: Admin panel, statistics"
+        echo "=================================="
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          Backend/*.log
+          Backend/test-results/
+        retention-days: 7
