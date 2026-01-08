@@ -17,7 +17,7 @@ def get_target_id(username: str):
     # "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     # "accept-encoding": "gzip, deflate, br, zstd",
     # "accept-language": "en-US,en;q=0.9",
-    "cookie": 'datr=pHBEaHK8sOX4LJjDob8KiA_y; ig_did=F8B0AADE-9E90-4C02-AB79-048A7192D338; ig_nrcb=1; mid=aExmxwALAAGU12v9xytF4YVZLFyL; dpr=1.25; csrftoken=lMEEbCVayqAAwpUbv7ZwluP94YjdFrGE; ds_user_id=77967696629; sessionid=77967696629%3AnUSwlOVPJTAG4f%3A19%3AAYhBASiMO5ZqbOKLyYQWl70OC2-7hsNYpBAustdpiA; ps_l=1; ps_n=1; rur="RVA\\05477967696629\\0541794074786:01fe487a7e3cdfeca9a2c71d2dd4131bf7cb6dfb4eccd7fa1602feb81106008b4158cb54"; wd=690x730',  # ESSENTIAL
+    "cookie": 'ig_did=CC536145-A463-42A8-8C5E-E9CE461F64C6; csrftoken=RveSWjfHjw8mJPPqXqWB44; datr=xWTAaC376j9eU8pZLQr3Zzxk; ps_l=1; ps_n=1; ig_nrcb=1; mid=aMBkxQALAAE1j-UKTokmRi3MGTrO; ds_user_id=77967696629; dpr=1.25; sessionid=77967696629%3AUTq3mfQ36OdF5V%3A0%3AAYjGECdp_e2Ic9KpGGc9MLQrPolcJRGkKes6-NPM2g; rur="RVA\05477967696629\0541795698197:01fe82fa66185ab9b5138aa6b2cd6ab5e338cba71fca3eca78b784b0a391ea05d68f5333"; wd=599x776',  # ESSENTIAL
     # "dpr": "1.25",
     # "sec-ch-prefers-color-scheme": "light",
     # "sec-ch-ua": '"Google Chrome";v="141", "Not?A_Brand";v="8", "Chromium";v="141"',
@@ -36,7 +36,7 @@ def get_target_id(username: str):
     # Step 1: GET the page
     response = requests.get(url, headers=headers)
     html = response.text
-
+    # print(html)  # Print the first 500 characters of the HTML for debugging
     # Step 2: Find the target_id in the HTML
     target_id_match = re.search(r'"target_id"\s*:\s*"?(\d+)"?', html)
 
@@ -98,12 +98,47 @@ def get_meta_data(target_id, username: str):
 
     headers = {
         "authority": "www.instagram.com",
+        "method": "POST",
+        "path": "/graphql/query",
+        "scheme": "https",
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br, zstd",
+        "accept-language": "en-US,en;q=0.9",
+        "content-length": "1490",
+        "content-type": "application/x-www-form-urlencoded",
+        "cookie": 'ig_did=CC536145-A463-42A8-8C5E-E9CE461F64C6; csrftoken=RveSWjfHjw8mJPPqXqWB44; datr=xWTAaC376j9eU8pZLQr3Zzxk; ps_l=1; ps_n=1; ig_nrcb=1; mid=aMBkxQALAAE1j-UKTokmRi3MGTrO; ds_user_id=77967696629; dpr=1.25; sessionid=77967696629%3AUTq3mfQ36OdF5V%3A0%3AAYjGECdp_e2Ic9KpGGc9MLQrPolcJRGkKes6-NPM2g; wd=599x776; rur="CCO\\05477967696629\\0541795698791:01fed6be289501f85001dddc2b632921d1ef0432e3afdd29e199681608b194ee961d40b7"',
+        "origin": "https://www.instagram.com",
+        "priority": "u=1, i",
+        "referer": f"https://www.instagram.com/{username}/reels/",
+        "sec-ch-prefers-color-scheme": "dark",
+        "sec-ch-ua": '"Chromium";v="142", "Google Chrome";v="142", "Not_A Brand";v="99"',
+        "sec-ch-ua-full-version-list": '"Chromium";v="142.0.7444.176", "Google Chrome";v="142.0.7444.176", "Not_A Brand";v="99.0.0.0"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-model": '""',
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-ch-ua-platform-version": '"19.0.0"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+        "x-asbd-id": "359341",
+        "x-bloks-version-id": "e931ff03adc522742d788ba659da2ded4fb760f51c8576b5cd93cdaf3987e4b0",
+        "x-csrftoken": "RveSWjfHjw8mJPPqXqWB44",
+        "x-fb-friendly-name": "PolarisProfileReelsTabContentQuery",
+        "x-fb-lsd": "xa_3XLBDc95COAGnE9hhQy",
+        "x-ig-app-id": "936619743392459",
+        "x-root-field-name": "xdt_api__v1__clips__user__connection_v2",
+    }
+
+    '''
+    headers = {
+        "authority": "www.instagram.com",
         "accept": "*/*",
         "accept-encoding": "gzip, deflate, br, zstd",
         "accept-language": "en-US,en;q=0.9",
         "content-length": "1874",
         "content-type": "application/x-www-form-urlencoded",
-        "cookie": "datr=pHBEaHK8sOX4LJjDob8KiA_y; ig_did=F8B0AADE-9E90-4C02-AB79-048A7192D338; ig_nrcb=1; mid=aExmxwALAAGU12v9xytF4YVZLFyL; dpr=1.25; csrftoken=lMEEbCVayqAAwpUbv7ZwluP94YjdFrGE; ds_user_id=77967696629; sessionid=77967696629%3AnUSwlOVPJTAG4f%3A19%3AAYhBASiMO5ZqbOKLyYQWl70OC2-7hsNYpBAustdpiA; wd=690x730; rur=\"RVA\\05477967696629\\0541794072327:01fe0008fe9b3b028caa876476fa95aeaada35dcaa223b4d33675d9f0ba24ac80bec8b55\"",
+        "cookie": 'ig_did=CC536145-A463-42A8-8C5E-E9CE461F64C6; csrftoken=RveSWjfHjw8mJPPqXqWB44; datr=xWTAaC376j9eU8pZLQr3Zzxk; ps_l=1; ps_n=1; ig_nrcb=1; mid=aMBkxQALAAE1j-UKTokmRi3MGTrO; ds_user_id=77967696629; dpr=1.25; sessionid=77967696629%3AUTq3mfQ36OdF5V%3A0%3AAYjGECdp_e2Ic9KpGGc9MLQrPolcJRGkKes6-NPM2g; wd=599x776; rur="CCO\05477967696629\0541795698791:01fed6be289501f85001dddc2b632921d1ef0432e3afdd29e199681608b194ee961d40b7"',
         "origin": "https://www.instagram.com",
         "priority": "u=1, i",
         "referer": f"https://www.instagram.com/{username}/reels/",
@@ -121,13 +156,15 @@ def get_meta_data(target_id, username: str):
         "x-asbd-id": "359341",
         "x-bloks-version-id": "e931ff03adc522742d788ba659da2ded4fb760f51c8576b5cd93cdaf3987e4b0",
         "x-csrftoken": "lMEEbCVayqAAwpUbv7ZwluP94YjdFrGE",
-        "x-fb-friendly-name": "PolarisProfileReelsTabContentQuery_connection",
-        "x-fb-lsd": "E69Uy1mzZDPfOwhuzCVwEl",
+        "x-fb-friendly-name": "PolarisProfileReelsTabContentQuery",
+        "x-fb-lsd": "BlSqLbqvXsmwlqsd8pxtkv",
         "x-ig-app-id": "936619743392459",
         "x-root-field-name": "xdt_api__v1__clips__user__connection_v2",
     }
+    '''
 
     response = requests.post(url, headers=headers, data=payload)
+    print(f"Response status: {response}")
 
     # Handle possible compression (zstd, br, gzip)
     content = response.content
@@ -225,18 +262,64 @@ def fetch_reels_paginated(target_id, username: str, desired_count: int = 20, sle
 
     headers = {
         "authority": "www.instagram.com",
+        "method": "POST",
+        "path": "/graphql/query",
+        "scheme": "https",
         "accept": "*/*",
         "accept-encoding": "gzip, deflate, br, zstd",
         "accept-language": "en-US,en;q=0.9",
-        # include cookie copied from the single-call implementation; session must be valid
-        "cookie": "datr=pHBEaHK8sOX4LJjDob8KiA_y; ig_did=F8B0AADE-9E90-4C02-AB79-048A7192D338; ig_nrcb=1; mid=aExmxwALAAGU12v9xytF4YVZLFyL; dpr=1.25; csrftoken=lMEEbCVayqAAwpUbv7ZwluP94YjdFrGE; ds_user_id=77967696629; sessionid=77967696629%3AnUSwlOVPJTAG4f%3A19%3AAYhBASiMO5ZqbOKLyYQWl70OC2-7hsNYpBAustdpiA; wd=690x730; rur=\"RVA\\05477967696629\\0541794072327:01fe0008fe9b3b028caa876476fa95aeaada35dcaa223b4d33675d9f0ba24ac80bec8b55\"",
+        "content-length": "1490",
         "content-type": "application/x-www-form-urlencoded",
+        "cookie": 'ig_did=CC536145-A463-42A8-8C5E-E9CE461F64C6; csrftoken=RveSWjfHjw8mJPPqXqWB44; datr=xWTAaC376j9eU8pZLQr3Zzxk; ps_l=1; ps_n=1; ig_nrcb=1; mid=aMBkxQALAAE1j-UKTokmRi3MGTrO; ds_user_id=77967696629; dpr=1.25; sessionid=77967696629%3AUTq3mfQ36OdF5V%3A0%3AAYjGECdp_e2Ic9KpGGc9MLQrPolcJRGkKes6-NPM2g; wd=599x776; rur="CCO\\05477967696629\\0541795698791:01fed6be289501f85001dddc2b632921d1ef0432e3afdd29e199681608b194ee961d40b7"',
         "origin": "https://www.instagram.com",
+        "priority": "u=1, i",
         "referer": f"https://www.instagram.com/{username}/reels/",
+        "sec-ch-prefers-color-scheme": "dark",
+        "sec-ch-ua": '"Chromium";v="142", "Google Chrome";v="142", "Not_A Brand";v="99"',
+        "sec-ch-ua-full-version-list": '"Chromium";v="142.0.7444.176", "Google Chrome";v="142.0.7444.176", "Not_A Brand";v="99.0.0.0"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-model": '""',
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-ch-ua-platform-version": '"19.0.0"',
         "sec-fetch-dest": "empty",
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-origin",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+        "x-asbd-id": "359341",
+        "x-bloks-version-id": "e931ff03adc522742d788ba659da2ded4fb760f51c8576b5cd93cdaf3987e4b0",
+        "x-csrftoken": "RveSWjfHjw8mJPPqXqWB44",
+        "x-fb-friendly-name": "PolarisProfileReelsTabContentQuery",
+        "x-fb-lsd": "xa_3XLBDc95COAGnE9hhQy",
+        "x-ig-app-id": "936619743392459",
+        "x-root-field-name": "xdt_api__v1__clips__user__connection_v2",
+    }
+
+    '''
+    headers = {
+        "authority": "www.instagram.com",
+        "method": "POST",
+        "path": "/graphql/query",
+        "scheme": "https",
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br, zstd",
+        "accept-language": "en-US,en;q=0.9",
+        "content-length": "1490",
+        "content-type": "application/x-www-form-urlencoded",
+        "cookie": 'ig_did=CC536145-A463-42A8-8C5E-E9CE461F64C6; csrftoken=RveSWjfHjw8mJPPqXqWB44; datr=xWTAaC376j9eU8pZLQr3Zzxk; ps_l=1; ps_n=1; ig_nrcb=1; mid=aMBkxQALAAE1j-UKTokmRi3MGTrO; ds_user_id=77967696629; dpr=1.25; sessionid=77967696629%3AUTq3mfQ36OdF5V%3A0%3AAYjGECdp_e2Ic9KpGGc9MLQrPolcJRGkKes6-NPM2g; wd=599x776; rur="CCO\\05477967696629\\0541795698791:01fed6be289501f85001dddc2b632921d1ef0432e3afdd29e199681608b194ee961d40b7"',
+        "origin": "https://www.instagram.com",
+        "priority": "u=1, i",
+        "referer": f"https://www.instagram.com/{username}/reels/",
+        "sec-ch-prefers-color-scheme": "dark",
+        "sec-ch-ua": '"Chromium";v="142", "Google Chrome";v="142", "Not_A Brand";v="99"',
+        "sec-ch-ua-full-version-list": '"Chromium";v="142.0.7444.176", "Google Chrome";v="142.0.7444.176", "Not_A Brand";v="99.0.0.0"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-model": '""',
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-ch-ua-platform-version": '"19.0.0"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
         "x-asbd-id": "359341",
         "x-fb-friendly-name": "PolarisProfileReelsTabContentQuery_connection",
         "x-fb-lsd": "E69Uy1mzZDPfOwhuzCVwEl",
@@ -244,6 +327,7 @@ def fetch_reels_paginated(target_id, username: str, desired_count: int = 20, sle
         "x-root-field-name": "xdt_api__v1__clips__user__connection_v2",
         "x-csrftoken": "lMEEbCVayqAAwpUbv7ZwluP94YjdFrGE",
     }
+    '''
 
     while len(accumulated_edges) < desired_count:
         remaining = desired_count - len(accumulated_edges)
@@ -346,6 +430,11 @@ def get_meta_data(meta_output_path: str) -> pd.DataFrame:
     extracted_data = []
     for edge in edges:
         media = edge.get("node", {}).get("media", {})
+
+        # Check if reel is pinned
+        clips_tab_pinned_user_ids = media.get("clips_tab_pinned_user_ids", [])
+        is_pinned = "Yes" if clips_tab_pinned_user_ids else "No"
+
         extracted_data.append({
             "pk": media.get("pk"),
             "code": media.get("code"),
@@ -353,6 +442,7 @@ def get_meta_data(meta_output_path: str) -> pd.DataFrame:
             "comment_count": media.get("comment_count"),
             "like_count": media.get("like_count"),
             #"view_count": media.get("view_count"),
+            "is_reel_pinned": is_pinned,
             "url": f'https://www.instagram.com/reel/{media.get("code")}/'
         })
 
