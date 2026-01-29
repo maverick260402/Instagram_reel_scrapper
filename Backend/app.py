@@ -14,7 +14,7 @@ import csv
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-
+import math
 # Add Scripts directory to path
 scripts_dir = Path(__file__).parent / "Scripts"
 sys.path.insert(0, str(scripts_dir))
@@ -373,10 +373,31 @@ def run_scraping_job_with_db(
                     for reel in reels_data:
                         reel['username'] = username
                         # Ensure numeric fields are integers
-                        reel['pk'] = str(reel.get('pk', ''))
-                        reel['play_count'] = int(reel.get('play_count', 0))
-                        reel['comment_count'] = int(reel.get('comment_count', 0))
-                        reel['like_count'] = int(reel.get('like_count', 0))
+                        reel['pk'] = str(reel.get('pk') or '')
+                        # Safe int conversion (handles None, NaN, and invalid values)
+                        def safe_int(val):
+                            if val is None:
+                                return 0
+                            try:
+                                if math.isnan(float(val)):
+                                    return 0
+                            except (TypeError, ValueError):
+                                pass
+                            try:
+                                return int(float(val))
+                            except (TypeError, ValueError):
+                                return 0
+                        reel['play_count'] = safe_int(reel.get('play_count'))
+                        reel['comment_count'] = safe_int(reel.get('comment_count'))
+                        reel['like_count'] = safe_int(reel.get('like_count'))
+#                        reel['play_count'] = int(reel.get('play_count') or 0)
+#                        reel['comment_count'] = int(reel.get('comment_count') or 0)
+#                        reel['like_count'] = int(reel.get('like_count') or 0)
+#
+#            reel['pk'] = str(reel.get('pk', ''))
+#                        reel['play_count'] = int(reel.get('play_count', 0))
+#                        reel['comment_count'] = int(reel.get('comment_count', 0))
+#                        reel['like_count'] = int(reel.get('like_count', 0))
 
                     # Bulk insert reels with Instagram account tracking
                     crud.bulk_create_reels(db, user_id, job_id, reels_data, instagram_account_id)
@@ -401,13 +422,17 @@ def run_scraping_job_with_db(
                         'error': 'Failed to retrieve meta data'
                     }
                     results.append(result)
-
+         
             except Exception as e:
+                print(f"[ERROR] Failed to process {username}: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 result = {
                     'username': username,
                     'status': 'failed',
                     'error': str(e)
                 }
+
                 results.append(result)
 
         elapsed_time = time_module.time() - start_time
@@ -421,6 +446,7 @@ def run_scraping_job_with_db(
             print(f"[ACCOUNT] Updated usage for Instagram account {instagram_account_id}: +{total_reels_scraped} reels")
 
         # Log activity
+
         crud.create_activity_log(
             db=db,
             event_type="scrape_job_completed",
@@ -595,28 +621,90 @@ async def scrape_reels(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
 @app.get("/api/job/{job_id}")
 async def get_job_status(
     job_id: str,
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """Get the status of a scraping job (user must own the job)"""
     print(f"\nSTATUS REQUEST for job: {job_id} by user: {current_user.email}")
 
-    if job_id not in jobs_db:
-        print(f"Job {job_id} NOT FOUND in memory")
+    # First check in-memory for running jobs
+    if job_id in jobs_db:
+        job = jobs_db[job_id]
+        # Verify user owns this job
+        if job.get('user_id') != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized to view this job")
+        print(f"Job found in memory - Status: {job['status']}, Progress: {job['progress']}%")
+        return job
+    
+    # Fallback: Check database for completed/failed jobs
+    db_job = db.query(models.ScrapingJob).filter(
+        models.ScrapingJob.job_id == job_id,
+        models.ScrapingJob.user_id == current_user.id
+    ).first()
+    
+    if not db_job:
+        print(f"Job {job_id} NOT FOUND in memory or database")
         raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    
+    print(f"Job found in database - Status: {db_job.status}")
 
-    job = jobs_db[job_id]
+    # Build results array from scraped reels
+    results = []
+    for username in (db_job.usernames or []):
+        reel_count = db.query(models.ScrapedReel).filter(
+            models.ScrapedReel.job_id == job_id,
+            models.ScrapedReel.instagram_username == username
+        ).count()
+        results.append({
+            "username": username,
+            "status": "success" if reel_count > 0 else "failed",
+            "reels_scraped": reel_count,
+            "message": f"Scraped {reel_count} reels" if reel_count > 0 else "No reels found"
+        })
+    
+    # Return job data from database
+    return {
+        "job_id": db_job.job_id,
+        "status": db_job.status,
+        "progress": db_job.progress,
+        "usernames": db_job.usernames,
+        "reel_count": db_job.reel_count,
+        "start_time": db_job.start_time.isoformat() if db_job.start_time else None,
+        "end_time": db_job.end_time.isoformat() if db_job.end_time else None,
+        "duration": db_job.duration,
+        "error_message": db_job.error_message,
+        "credits_consumed": db_job.credits_consumed,
+        "user_id": db_job.user_id,
+        "results": results
+    }
 
-    # Verify user owns this job
-    if job.get('user_id') != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to view this job")
 
-    print(f"Job found - Status: {job['status']}, Progress: {job['progress']}%")
-
-    return job
-
+#@app.get("/api/job/{job_id}")
+#async def get_job_status(
+#    job_id: str,
+#    current_user: models.User = Depends(get_current_user)
+#):
+#    """Get the status of a scraping job (user must own the job)"""
+#    print(f"\nSTATUS REQUEST for job: {job_id} by user: {current_user.email}")
+#
+#    if job_id not in jobs_db:
+#        print(f"Job {job_id} NOT FOUND in memory")
+#        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+#
+#    job = jobs_db[job_id]
+#
+#    # Verify user owns this job
+#    if job.get('user_id') != current_user.id:
+#        raise HTTPException(status_code=403, detail="Not authorized to view this job")
+#
+#    print(f"Job found - Status: {job['status']}, Progress: {job['progress']}%")
+#
+#    return job
+#*/
 
 # ==================== Analytics Endpoints ====================
 
