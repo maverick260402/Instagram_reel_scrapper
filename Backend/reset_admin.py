@@ -37,7 +37,7 @@ def reset_admin():
         print("Email: admin@example.com")
         print("Password: admin123")
         print("="*70)
-        print("\nYou can now login at: http://localhost:8080/static/admin/login.html")
+        print("\nYou can now login at: http://localhost:8888/static/admin/login.html")
 
     except Exception as e:
         print(f"[ERROR] {str(e)}")

@@ -1157,7 +1157,7 @@ if __name__ == '__main__':
     uvicorn.run(
         app,
         host="127.0.0.1",  # Changed from 0.0.0.0 to avoid Windows firewall issues
-        port=8080,  # Changed to 8080 to avoid Windows reserved port range (1-5000)
+        port=8888,  # Changed to 8888 to avoid port conflicts
         timeout_keep_alive=600,  # 10 minutes keepalive timeout
         timeout_graceful_shutdown=30
     )

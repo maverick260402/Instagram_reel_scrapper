@@ -44,7 +44,7 @@ def create_new_api_key(key_name: str):
         print()
         print("Use this key in the 'X-API-Key' header when calling admin endpoints.")
         print("Example:")
-        print(f'  curl -H "X-API-Key: {api_key_raw}" http://localhost:8080/api/admin/instagram-accounts')
+        print(f'  curl -H "X-API-Key: {api_key_raw}" http://localhost:8888/api/admin/instagram-accounts')
         print()
         print("Or in Python requests:")
         print(f'  headers = {{"X-API-Key": "{api_key_raw}"}}')

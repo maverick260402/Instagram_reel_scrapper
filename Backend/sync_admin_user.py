@@ -45,7 +45,7 @@ def sync_admin_user():
         print(f"User ID: {user.id}")
         print(f"Email: {admin.email}")
         print("="*70)
-        print("\nYou can now login at: http://localhost:8080/static/admin/login.html")
+        print("\nYou can now login at: http://localhost:8888/static/admin/login.html")
 
     except Exception as e:
         print(f"[ERROR] {str(e)}")

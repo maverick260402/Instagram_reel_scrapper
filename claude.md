@@ -2312,6 +2312,7 @@ response = requests.post(
 
 **Cause:** All Instagram accounts are paused or inactive
 
+<<<<<<< Updated upstream
 **Solution:**
 ```bash
 # Check account status
@@ -2319,6 +2320,12 @@ cd Backend
 python -c "
 from database import SessionLocal
 from crud import get_all_instagram_accounts
+=======
+2. Navigate to admin panel:
+   ```
+   http://localhost:8888/static/admin/index.html
+   ```
+>>>>>>> Stashed changes
 
 db = SessionLocal()
 accounts = get_all_instagram_accounts(db)

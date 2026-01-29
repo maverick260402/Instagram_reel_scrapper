@@ -198,4 +198,4 @@ if __name__ == "__main__":
     print("="*60)
     print("\nYou can now start the application with:")
     print("  python app.py")
-    print("\nThe server will be available at: http://127.0.0.1:8080")
+    print("\nThe server will be available at: http://127.0.0.1:8888")

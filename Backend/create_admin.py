@@ -45,7 +45,7 @@ def create_admin_user():
         print(f"Email: admin@example.com")
         print(f"Password: admin123")
         print("="*70)
-        print("\nYou can now login at: http://localhost:8080/static/admin/login.html")
+        print("\nYou can now login at: http://localhost:8888/static/admin/login.html")
 
     except Exception as e:
         print(f"[ERROR] Failed to create admin user: {str(e)}")
