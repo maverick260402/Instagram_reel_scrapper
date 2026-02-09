@@ -1,7 +1,7 @@
 // Authentication JavaScript for Instagram Reel Scraper
 // Handles login, signup, and token management
 
-const API_URL = 'http://167.71.224.203';
+const API_URL = '';
 
 // ==================== DOM Elements ====================
 const loginForm = document.getElementById('loginForm');

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Hub - Unlock Your Social Media Insights</title>
+    <meta name="description"
+        content="Analytics Hub - The ultimate platform for social media insights. Track Instagram reel performance, engagement metrics, and more.">
+    <link rel="stylesheet" href="/static/landing.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <svg class="logo-icon" width="32" height="32" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <span>Analytics Hub</span>
+            </a>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#faq">FAQ</a></li>
+                <li><a href="#contact">Contact</a></li>
+                <li><a href="/static/login.html" class="nav-btn">Login</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    Unlock Your
+                    <span class="gradient-text">Social Media</span>
+                    Insights
+                </h1>
+                <p class="hero-subtitle">
+                    The ultimate analytics platform for Instagram creators and marketers.
+                    Track performance, discover trends, and grow your audience with data-driven decisions.
+                </p>
+                <div class="hero-cta">
+                    <a href="/static/login.html" class="btn btn-primary btn-large">
+                        Get Started Free
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M4.16667 10H15.8333M15.8333 10L10.8333 5M15.8333 10L10.8333 15"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </a>
+                    <a href="#features" class="btn btn-secondary">Learn More</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">10K+</span>
+                        <span class="stat-label">Reels Analyzed</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">500+</span>
+                        <span class="stat-label">Active Users</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">99%</span>
+                        <span class="stat-label">Uptime</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <canvas id="pointSphere"></canvas>
+            </div>
+        </div>
+        <div class="hero-gradient"></div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-tag">Features</span>
+                <h2 class="section-title">Everything You Need to Analyze</h2>
+                <p class="section-subtitle">Powerful tools to help you understand your Instagram performance</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                                stroke="currentColor" stroke-width="2" />
+                            <path d="M15 12L10 9V15L15 12Z" fill="currentColor" />
+                        </svg>
+                    </div>
+                    <h3>Reel Performance</h3>
+                    <p>Track plays, likes, and comments across all your reels in real-time.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 3V21H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M7 16L11 12L15 14L21 8" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <h3>Engagement Metrics</h3>
+                    <p>Calculate engagement ratios and identify your best performing content.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+                            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+                            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+                            <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                    </div>
+                    <h3>Batch Processing</h3>
+                    <p>Analyze multiple accounts simultaneously with our powerful scraping engine.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path
+                                d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path
+                                d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path
+                                d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <h3>Group Management</h3>
+                    <p>Organize accounts into groups for easier tracking and comparison.</p>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <h3>Export Data</h3>
+                    <p>Download your analytics as CSV for further analysis in Excel or Google Sheets.</p>
+                </div>
+                <div class="feature-card feature-coming-soon fade-in">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="feature-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <h3>More Platforms</h3>
+                    <p>TikTok, YouTube, and Twitter analytics coming soon to expand your insights.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-tag">How It Works</span>
+                <h2 class="section-title">Simple. Fast. Powerful.</h2>
+                <p class="section-subtitle">Get started in minutes with our intuitive workflow</p>
+            </div>
+            <div class="steps-container">
+                <div class="step fade-in">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <h3>Add Usernames</h3>
+                        <p>Enter Instagram usernames individually or in bulk. Create groups to organize your analysis.
+                        </p>
+                    </div>
+                    <div class="step-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path
+                                d="M8.5 11C10.7091 11 12.5 9.20914 12.5 7C12.5 4.79086 10.7091 3 8.5 3C6.29086 3 4.5 4.79086 4.5 7C4.5 9.20914 6.29086 11 8.5 11Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M20 8V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M23 11H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step fade-in">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <h3>Run Analysis</h3>
+                        <p>Click start and let our engine scrape reel data including plays, likes, comments, and more.
+                        </p>
+                    </div>
+                    <div class="step-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M12 5L19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step fade-in">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <h3>Get Insights</h3>
+                        <p>View comprehensive analytics dashboard, filter data, and export reports for your strategy.
+                        </p>
+                    </div>
+                    <div class="step-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M12 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M6 20V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq" id="faq">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-tag">FAQ</span>
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <p class="section-subtitle">Everything you need to know about Analytics Hub</p>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item fade-in">
+                    <button class="faq-question">
+                        <span>What data can I analyze with Analytics Hub?</span>
+                        <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Analytics Hub currently supports Instagram Reels data including play counts, likes, comments,
+                            engagement ratios, and posting timestamps. We track whether reels are pinned and provide
+                            comprehensive filtering options.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-in">
+                    <button class="faq-question">
+                        <span>How many accounts can I analyze?</span>
+                        <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>You can analyze multiple accounts simultaneously. Our batch processing feature allows you to
+                            add usernames in bulk and organize them into groups for easier management.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-in">
+                    <button class="faq-question">
+                        <span>Is my data secure?</span>
+                        <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Yes, we take security seriously. All data is encrypted in transit and at rest. Your analytics
+                            data is private and only accessible to your account.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-in">
+                    <button class="faq-question">
+                        <span>Can I export my analytics data?</span>
+                        <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Absolutely! You can export all your analytics data as CSV files for further analysis in
+                            Excel, Google Sheets, or any data analysis tool of your choice.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-in">
+                    <button class="faq-question">
+                        <span>What platforms will be supported in the future?</span>
+                        <svg class="faq-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>We're actively working on adding support for TikTok, YouTube, and Twitter analytics. Stay
+                            tuned for updates as we expand our platform capabilities!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="contact-wrapper contact-centered">
+                <div class="contact-info fade-in">
+                    <span class="section-tag">Contact</span>
+                    <h2 class="section-title">Get In Touch</h2>
+                    <p class="section-subtitle">Have questions? We'd love to hear from you. Reach out to us via email.
+                    </p>
+                    <div class="contact-details">
+                        <div class="contact-item contact-email-large">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                                <path d="M22 6L12 13L2 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            <a href="mailto:hello@analyticshub.io" class="email-link">hello@analyticshub.io</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="#" class="footer-logo">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <span>Analytics Hub</span>
+                    </a>
+                    <p>Unlock the power of social media insights.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <a href="#features">Features</a>
+                        <a href="#how-it-works">How It Works</a>
+                        <a href="#faq">FAQ</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Account</h4>
+                        <a href="/static/login.html">Login</a>
+                        <a href="/static/login.html">Sign Up</a>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Support</h4>
+                        <a href="#contact">Contact</a>
+                        <a href="#faq">Help Center</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Analytics Hub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="/static/landing.js"></script>
+</body>
+
+</html>

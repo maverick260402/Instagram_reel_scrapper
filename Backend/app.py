@@ -141,10 +141,10 @@ async def shutdown_event():
 
 @app.get("/")
 async def read_root():
-    """Serve the login page"""
-    login_path = frontend_path / "login.html"
-    if login_path.exists():
-        return FileResponse(login_path)
+    """Serve the landing page"""
+    landing_path = frontend_path / "landing.html"
+    if landing_path.exists():
+        return FileResponse(landing_path)
     return {"message": "Instagram Reel Scraper API - Multi-User Version"}
 
 

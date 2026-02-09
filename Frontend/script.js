@@ -339,7 +339,7 @@ function updateUsernamesList() {
 
     // Add event delegation for remove buttons (prevents XSS via onclick)
     usernamesList.querySelectorAll('.remove-btn[data-index]').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             const index = parseInt(this.dataset.index, 10);
             const usernameToRemove = usernames[index];
             if (usernameToRemove) {
@@ -355,7 +355,7 @@ function updateScrapeButton() {
 }
 
 // Function to load usernames from a group (called from groups.js)
-window.loadUsernamesFromGroup = function(groupUsernames, groupId) {
+window.loadUsernamesFromGroup = function (groupUsernames, groupId) {
     console.log('Loading usernames from group:', groupId, groupUsernames);
 
     // Clear existing usernames
@@ -755,7 +755,7 @@ async function handleScrape() {
         let errorMessage = error.message || 'Unknown error';
 
         if (error.message === 'Failed to fetch') {
-            errorMessage = 'Network error. Please check if the backend server is running on 167.71.224.203';
+            errorMessage = 'Network error. Please check if the backend server is running.';
         }
 
         showNotification(`Error: ${errorMessage}`, 'error');
@@ -788,12 +788,12 @@ function showNotification(message, type = 'info') {
 }
 
 // Global error and success notification functions (used by groups.js and analytics.js)
-window.showError = function(message) {
+window.showError = function (message) {
     showNotification(message, 'error');
     console.error('❌', message);
 };
 
-window.showSuccess = function(message) {
+window.showSuccess = function (message) {
     showNotification(message, 'success');
     console.log('✅', message);
 };
