@@ -1,13 +1,12 @@
 /**
  * Analytics Hub Landing Page - JavaScript
- * Includes: Three.js Point Sphere, Scroll Animations, FAQ Accordion, Mobile Menu
+ * Includes: Scroll Animations, FAQ Accordion, Mobile Menu
  */
 
 // ==================== DOM Elements ====================
 const navbar = document.getElementById('navbar');
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const navLinks = document.getElementById('navLinks');
-const pointSphereCanvas = document.getElementById('pointSphere');
 const faqItems = document.querySelectorAll('.faq-item');
 const contactForm = document.getElementById('contactForm');
 
@@ -71,7 +70,7 @@ const fadeInObserver = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-document.querySelectorAll('.fade-in').forEach(el => {
+document.querySelectorAll('.animate-on-scroll').forEach(el => {
     fadeInObserver.observe(el);
 });
 
@@ -106,178 +105,65 @@ contactForm?.addEventListener('submit', (e) => {
     contactForm.reset();
 });
 
-// ==================== Three.js Point Sphere Animation ====================
-let scene, camera, renderer, particles, particlePositions;
-let mouseX = 0, mouseY = 0;
-let windowHalfX = window.innerWidth / 2;
-let windowHalfY = window.innerHeight / 2;
+// ==================== Animated Stat Counters ====================
 
-function initPointSphere() {
-    if (!pointSphereCanvas || typeof THREE === 'undefined') {
-        console.warn('Three.js or canvas not available');
-        return;
+document.addEventListener('DOMContentLoaded', () => {
+    initAnimatedCounters();
+});
+
+function initAnimatedCounters() {
+    const statNumbers = document.querySelectorAll('.stat-number[data-count]');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const el = entry.target;
+                const endVal = parseFloat(el.getAttribute('data-count'));
+                const prefix = el.getAttribute('data-prefix') || '';
+                const suffix = el.getAttribute('data-suffix') || '';
+                const decimals = el.getAttribute('data-decimals') ? parseInt(el.getAttribute('data-decimals')) : 0;
+
+                if (!isNaN(endVal)) {
+                    animateCounter(el, endVal, prefix, suffix, decimals);
+                }
+                observer.unobserve(el);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    statNumbers.forEach(el => observer.observe(el));
+}
+
+function animateCounter(el, target, prefix, suffix, decimals) {
+    const duration = 1800;
+    const startTime = performance.now();
+
+    function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
     }
 
-    // Scene setup
-    scene = new THREE.Scene();
+    function update(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = easeOutCubic(progress);
+        const current = eased * target;
 
-    // Camera setup
-    const containerWidth = pointSphereCanvas.parentElement.offsetWidth;
-    const containerHeight = pointSphereCanvas.parentElement.offsetHeight;
-    camera = new THREE.PerspectiveCamera(75, containerWidth / containerHeight, 0.1, 1000);
-    camera.position.z = 400;
-
-    // Renderer setup
-    renderer = new THREE.WebGLRenderer({
-        canvas: pointSphereCanvas,
-        antialias: true,
-        alpha: true
-    });
-    renderer.setSize(containerWidth, containerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 0);
-
-    // Create particles
-    const particleCount = 2000;
-    const geometry = new THREE.BufferGeometry();
-    particlePositions = new Float32Array(particleCount * 3);
-    const originalPositions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-
-    const radius = 200;
-
-    for (let i = 0; i < particleCount; i++) {
-        // Distribute points on sphere surface using Fibonacci sphere algorithm
-        const phi = Math.acos(-1 + (2 * i) / particleCount);
-        const theta = Math.sqrt(particleCount * Math.PI) * phi;
-
-        const x = radius * Math.cos(theta) * Math.sin(phi);
-        const y = radius * Math.sin(theta) * Math.sin(phi);
-        const z = radius * Math.cos(phi);
-
-        particlePositions[i * 3] = x;
-        particlePositions[i * 3 + 1] = y;
-        particlePositions[i * 3 + 2] = z;
-
-        originalPositions[i * 3] = x;
-        originalPositions[i * 3 + 1] = y;
-        originalPositions[i * 3 + 2] = z;
-
-        // Color variation: purple to lighter purple
-        const intensity = 0.5 + Math.random() * 0.5;
-        colors[i * 3] = 0.545 * intensity; // R (139/255)
-        colors[i * 3 + 1] = 0.361 * intensity; // G (92/255)
-        colors[i * 3 + 2] = 0.965 * intensity; // B (246/255)
-    }
-
-    geometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geometry.userData.originalPositions = originalPositions;
-
-    // Particle material
-    const material = new THREE.PointsMaterial({
-        size: 3,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.8,
-        sizeAttenuation: true,
-        blending: THREE.AdditiveBlending
-    });
-
-    particles = new THREE.Points(geometry, material);
-    scene.add(particles);
-
-    // Mouse move listener
-    document.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('resize', onWindowResize);
-
-    // Start animation
-    animate();
-}
-
-function onMouseMove(event) {
-    mouseX = (event.clientX - windowHalfX) / windowHalfX;
-    mouseY = (event.clientY - windowHalfY) / windowHalfY;
-}
-
-function onWindowResize() {
-    if (!pointSphereCanvas || !camera || !renderer) return;
-
-    windowHalfX = window.innerWidth / 2;
-    windowHalfY = window.innerHeight / 2;
-
-    const containerWidth = pointSphereCanvas.parentElement.offsetWidth;
-    const containerHeight = pointSphereCanvas.parentElement.offsetHeight;
-
-    camera.aspect = containerWidth / containerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(containerWidth, containerHeight);
-}
-
-function animate() {
-    requestAnimationFrame(animate);
-
-    if (!particles) return;
-
-    const time = Date.now() * 0.001;
-    const scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-
-    // Rotate based on time and mouse
-    particles.rotation.y = time * 0.1 + mouseX * 0.5;
-    particles.rotation.x = Math.sin(time * 0.1) * 0.2 + mouseY * 0.3;
-
-    // Scale based on scroll
-    const scale = 1 - scrollProgress * 0.3;
-    particles.scale.setScalar(Math.max(scale, 0.7));
-
-    // Particle repulsion from mouse
-    const positions = particles.geometry.attributes.position.array;
-    const originalPositions = particles.geometry.userData.originalPositions;
-    const repulsionRadius = 80;
-    const repulsionStrength = 30;
-
-    // Convert mouse position to 3D space (approximate)
-    const mouseX3D = mouseX * 300;
-    const mouseY3D = -mouseY * 300;
-
-    for (let i = 0; i < positions.length; i += 3) {
-        const ox = originalPositions[i];
-        const oy = originalPositions[i + 1];
-        const oz = originalPositions[i + 2];
-
-        // Calculate distance from mouse (simplified 2D check)
-        const dx = positions[i] - mouseX3D;
-        const dy = positions[i + 1] - mouseY3D;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < repulsionRadius && distance > 0) {
-            const force = (repulsionRadius - distance) / repulsionRadius;
-            const pushX = (dx / distance) * force * repulsionStrength;
-            const pushY = (dy / distance) * force * repulsionStrength;
-
-            positions[i] = ox + pushX;
-            positions[i + 1] = oy + pushY;
+        if (decimals > 0) {
+            el.textContent = prefix + current.toFixed(decimals) + suffix;
         } else {
-            // Smoothly return to original position
-            positions[i] += (ox - positions[i]) * 0.05;
-            positions[i + 1] += (oy - positions[i + 1]) * 0.05;
-            positions[i + 2] += (oz - positions[i + 2]) * 0.05;
+            el.textContent = prefix + Math.floor(current).toLocaleString() + suffix;
+        }
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            if (decimals > 0) {
+                el.textContent = prefix + target.toFixed(decimals) + suffix;
+            } else {
+                el.textContent = prefix + target.toLocaleString() + suffix;
+            }
         }
     }
 
-    particles.geometry.attributes.position.needsUpdate = true;
-
-    renderer.render(scene, camera);
-}
-
-// ==================== Initialize ====================
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Three.js sphere after DOM is ready
-    // Small delay to ensure Three.js is loaded
-    setTimeout(initPointSphere, 100);
-});
-
-// Also try initializing if Three.js loads after DOMContentLoaded
-if (typeof THREE !== 'undefined') {
-    setTimeout(initPointSphere, 100);
+    requestAnimationFrame(update);
 }

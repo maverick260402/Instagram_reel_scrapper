@@ -2299,154 +2299,443 @@ cookies = {
     "csrftoken": "valid_csrf_token_here"
 }
 
-response = requests.post(
-    "http://localhost:8080/api/admin/instagram-accounts/1/cookies",
-    headers={"X-API-Key": "your-api-key"},
-    json=cookies
-)
+   response = requests.post(
+       "http://localhost:8080/api/admin/instagram-accounts/1/cookies",
+       headers={"X-API-Key": "your-api-key"},
+       json=cookies
+   )
+   print(response.json())
+   ```
+
+**Prevention**: Always verify new Instagram accounts have valid cookies before activating them. Test cookies are for development only!
+
+---
+
+## 🚀 Phase 3: Admin Panel & Advanced Features (NEW)
+
+**Status**: ✅ Implemented
+**Date**: December 18, 2025
+
+### Overview
+
+Phase 3 adds a comprehensive admin panel with web-based user management, Instagram account monitoring, activity logs viewer, system statistics dashboard, and real-time notifications.
+
+### New Features
+
+#### 1. Admin Panel Web UI
+- **Modern Dark Theme**: Matches existing design language (black/purple/white)
+- **Responsive Layout**: Works on desktop and mobile devices
+- **Sidebar Navigation**: Easy access to all admin features
+- **Real-time Updates**: Notification system for live events
+
+#### 2. User Management Interface
+- **User List**: View all users with credit usage and status
+- **Search & Filter**: Find users by email/username, filter by status
+- **Edit Users**: Modify credit limits and activate/deactivate accounts
+- **User Details**: View detailed statistics and recent jobs
+- **Usage Tracking**: Visual progress bars for credit consumption
+
+#### 3. Instagram Account Management
+- **Account Pool Monitoring**: View all Instagram accounts
+- **Cookie Health Status**: Visual indicators for cookie freshness
+- **Usage Statistics**: Daily and lifetime scrape counts
+- **Success Rates**: Track account performance
+- **Filter by Status**: Active, paused, healthy cookies, expired cookies
+
+#### 4. Activity Logs Viewer
+- **Comprehensive Logging**: All system events in one place
+- **Advanced Filtering**: By date range, event type, user, account
+- **Export to CSV**: Download logs for external analysis
+- **Real-time Updates**: See events as they happen
+
+#### 5. System Statistics Dashboard
+- **Overview Cards**: Total users, accounts, today's reels, success rate
+- **Daily Trends Chart**: Reels scraped and active users over time
+- **Credit Usage Chart**: Top consumers visualization
+- **Account Distribution**: Pie chart of account usage
+- **Hourly Patterns**: Identify peak usage times
+- **Success/Failure Rates**: Donut chart visualization
+
+#### 6. Performance Optimizations
+- **Database Indexes**: Faster queries on activity_logs, scraped_reels, scraping_jobs
+- **Database Views**: Precomputed statistics for quick access
+- **Efficient Queries**: Optimized SQL for large datasets
+
+### Admin Panel Structure
+
+```
+Frontend/admin/
+├── index.html           # Main admin dashboard page
+├── admin.css            # Admin panel styles (dark theme)
+├── admin.js             # Main controller and navigation
+├── components/
+│   ├── users.js         # User management component
+│   ├── accounts.js      # Instagram account management
+│   ├── logs.js          # Activity logs viewer
+│   └── stats.js         # Statistics dashboard
+└── utils/
+    ├── api.js           # API client for backend communication
+    └── charts.js        # Chart.js helper utilities
 ```
 
-#### 7. "All Instagram accounts are exhausted"
+### Setup Instructions (Phase 3)
 
-**Symptom:** Can't start scraping job
+#### Step 1: Run Database Migration
 
-**Cause:** All Instagram accounts are paused or inactive
+The migration adds performance indexes and useful database views:
 
-<<<<<<< Updated upstream
-**Solution:**
+**Option 1: Using Python script**
 ```bash
-# Check account status
 cd Backend
-python -c "
+python run_migration.py migrations/002_phase3_indexes_views.sql
+```
+
+**Option 2: Using psql directly**
+```bash
+psql -U scraper_user -d instagram_scraper -f Backend/migrations/002_phase3_indexes_views.sql
+```
+
+This creates:
+- 10 indexes for faster queries
+- 6 database views for complex statistics
+- Performance optimizations for large datasets
+
+#### Step 2: Create Admin User
+
+Admin users are separate from regular users and have special permissions:
+
+```python
 from database import SessionLocal
-from crud import get_all_instagram_accounts
-=======
+from models import AdminUser
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+db = SessionLocal()
+
+# Create admin user
+admin = AdminUser(
+    username="admin",
+    email="admin@example.com",
+    password_hash=pwd_context.hash("your_secure_password"),
+    is_active=True
+)
+db.add(admin)
+db.commit()
+db.close()
+```
+
+**Default Admin** (from Phase 1 migration):
+- Username: `admin`
+- Email: `admin@example.com`
+- Password: `admin123`
+- ⚠️ **Change this password immediately for production!**
+
+#### Step 3: Access Admin Panel
+
+1. Start the server:
+   ```bash
+   cd Backend
+   python app.py
+   ```
+
 2. Navigate to admin panel:
    ```
-   http://localhost:8888/static/admin/index.html
+   http://localhost:8080/static/admin/index.html
    ```
->>>>>>> Stashed changes
 
-db = SessionLocal()
-accounts = get_all_instagram_accounts(db)
-active = [a for a in accounts if a.is_active and not a.is_paused]
-print(f'Active accounts: {len(active)}')
-for a in active:
-    print(f'  - {a.username}')
-"
+3. Login with admin credentials
+
+### Admin Panel Pages
+
+#### Dashboard Page
+
+**Overview Cards:**
+- Total Users (active/inactive count)
+- Instagram Accounts (active/paused count)
+- Today's Reels (jobs completed count)
+- Success Rate (percentage with total jobs)
+
+**Charts:**
+- Daily Scraping Trends (line chart, last 7/14/30 days)
+- Top Credit Consumers (bar chart)
+
+**Recent Activity:**
+- Last 10 system events with icons and timestamps
+
+#### User Management Page
+
+**Features:**
+- Search users by email/username
+- Filter by status (all/active/inactive)
+- View user details (jobs, reels, success rate)
+- Edit credit limits
+- Activate/deactivate users
+
+**User Table Columns:**
+- Email, Username
+- Credits (used/limit with progress bar)
+- Usage percentage
+- Status badge
+- Created date
+- Actions (Edit, Details)
+
+#### Instagram Accounts Page
+
+**Features:**
+- Filter by status (all/active/paused/healthy/expired)
+- Cookie health monitoring
+- Usage statistics per account
+- Success rate tracking
+
+**Account Table Columns:**
+- Username, Email
+- Status (active/paused/inactive badge)
+- Cookie Health (healthy/expiring/expired with age)
+- Daily Usage count
+- Total Scrapes count
+- Success Rate (with progress bar)
+- Last Used timestamp
+
+#### Activity Logs Page
+
+**Features:**
+- Date range filter (start/end date pickers)
+- Event type filter (scrape_started, scrape_success, scrape_failed, etc.)
+- Export logs to CSV
+- Detailed log information
+
+**Log Table Columns:**
+- Timestamp
+- Event Type (with colored badge)
+- User ID
+- Instagram Account ID
+- Job ID
+- Details (JSON formatted)
+
+#### Statistics Page
+
+**Advanced Charts:**
+- Account Usage Distribution (pie chart)
+- Hourly Usage Pattern (bar chart showing peak hours)
+- Success vs Failure Rates (donut chart)
+
+**Time Range Filter:**
+- Last 7/14/30/90 days
+
+### Database Views Added
+
+#### `v_daily_stats`
+Aggregates daily scraping metrics:
+- Date, total reels, active users, accounts used
+- Average plays, likes, comments
+
+#### `v_user_summary`
+User statistics with credit usage:
+- User info, credit limits, usage percent
+- Total jobs, successful jobs, total reels scraped
+
+#### `v_instagram_account_health`
+Account status and cookie health:
+- Account info, status flags
+- Success rate calculation
+- Cookie health status (HEALTHY/EXPIRING_SOON/EXPIRED/NO_COOKIES)
+- Cookie age in days
+
+#### `v_recent_activity`
+Recent system activity with joined details:
+- Activity log with user/account usernames
+- Job IDs and event details
+
+#### `v_job_performance`
+Job performance metrics:
+- Job details with user and account info
+- Duration in seconds
+- Reels scraped and credits consumed
+
+#### `v_hourly_usage_pattern`
+Usage patterns by hour:
+- Hour of day (0-23)
+- Total reels, unique users, average plays
+
+### API Endpoints (Phase 3)
+
+All endpoints require admin authentication (`Authorization: Bearer <token>`)
+
+#### Authentication
+```
+POST /api/admin/auth/login
+GET  /api/admin/auth/me
 ```
 
-Resume accounts:
-```python
-from account_rotation import resume_account
-resume_account(db, account_id=1)
+#### User Management
+```
+GET    /api/admin/users                    # List users with filters
+GET    /api/admin/users/{user_id}          # User details
+PUT    /api/admin/users/{user_id}          # Update user
+DELETE /api/admin/users/{user_id}          # Deactivate user
+GET    /api/admin/users/{user_id}/stats    # User statistics
 ```
 
-Or add new accounts.
-
-#### 8. Database Connection Failed
-
-**Error:** `could not connect to server: Connection refused`
-
-**Solution:**
-```bash
-# Check if PostgreSQL is running
-docker ps
-
-# If not running
-docker start instagram_scraper_db
-
-# Check logs
-docker logs instagram_scraper_db
-
-# Verify port
-# Windows:
-netstat -ano | findstr :5432
-# macOS/Linux:
-lsof -i :5432
+#### Activity Logs
+```
+GET /api/admin/logs              # List logs with filters
+GET /api/admin/logs/stats        # Log statistics
 ```
 
-#### 9. Admin Panel Won't Load
-
-**Symptom:** Blank page or "Failed to load profile"
-
-**Solution:**
-1. Check backend is running
-2. Verify admin user exists:
-```bash
-psql -U scraper_user -d instagram_scraper -c "SELECT * FROM admin_users;"
+#### System Statistics
 ```
-3. Clear browser cache
-4. Check browser console (F12) for errors
-5. Try different browser
+GET /api/admin/stats/overview       # System overview
+GET /api/admin/stats/usage          # Usage over time
+GET /api/admin/stats/performance    # Performance metrics
+```
 
-#### 10. Playwright Login Fails (Cookie Updater)
+### Configuration
 
-**Error:** "Login failed" or "Error during login"
+#### Admin Panel Settings
 
-**Cause:** Instagram detected automation or 2FA enabled
+No additional configuration needed! The admin panel uses the same authentication system as the main app.
 
-**Solution:**
-- Use browser cookie method instead (recommended)
-- Disable headless mode to debug:
-  ```python
-  browser = await playwright.firefox.launch(headless=False)
-  ```
-- Check if 2FA is enabled (not supported)
-- Use valid Instagram credentials
+#### Customize Chart Time Ranges
 
-#### 11. Rate Limiting / Blocked Requests
+Edit `Frontend/admin/components/stats.js`:
+```javascript
+// Change default days for charts
+currentDays: 7  // Change to 14, 30, etc.
+```
 
-**Symptom:** Instagram returns errors or empty responses
+#### Customize Notification Polling Interval
 
-**Solution:**
-- Increase sleep time:
-  ```python
-  fetch_reels_paginated(..., sleep_seconds=5.0)
-  ```
-- Use valid session cookies
-- Wait 30-60 minutes before retrying
-- Add more Instagram accounts to pool
+Edit `Frontend/admin/admin.js`:
+```javascript
+// Default: 30 seconds
+setInterval(() => {
+    this.loadNotifications();
+}, 30000);  // Change to desired interval in milliseconds
+```
 
-#### 12. Charts Not Displaying (Admin Panel)
+### Using the Admin Panel
 
-**Symptom:** Empty chart areas
+#### Managing Users
 
-**Solution:**
+1. **View all users**: Navigate to "Users" page
+2. **Search for user**: Type email/username in search box
+3. **Edit credit limit**:
+   - Click "Edit" button next to user
+   - Modify "Daily Credit Limit" field
+   - Click "Save Changes"
+4. **Deactivate user**:
+   - Click "Edit" button
+   - Uncheck "Active" checkbox
+   - Click "Save Changes"
+
+#### Monitoring Instagram Accounts
+
+1. **View account health**: Navigate to "Instagram Accounts" page
+2. **Check cookie status**: Look at "Cookie Health" column
+   - 🟢 Healthy (0-5 days old)
+   - 🟡 Expiring (5-7 days old)
+   - 🔴 Expired (>7 days old)
+3. **Filter accounts**: Use status dropdown
+   - Active: Only active, non-paused accounts
+   - Paused: Only paused accounts
+   - Healthy: Accounts with fresh cookies (0-5 days)
+   - Expired: Accounts needing cookie refresh (>7 days)
+
+#### Viewing Activity Logs
+
+1. **Set date range**: Use start/end date pickers (default: last 7 days)
+2. **Filter by event type**: Select from dropdown
+3. **Export logs**: Click "Export CSV" button
+4. **View details**: Hover over details column to see full JSON
+
+#### Analyzing Statistics
+
+1. **Dashboard overview**: View real-time metrics on Dashboard page
+2. **Advanced statistics**: Navigate to "Statistics" page
+3. **Change time range**: Use dropdown filter (7/14/30/90 days)
+4. **Identify trends**: Look at daily trends chart
+5. **Find top users**: Check credit usage bar chart
+6. **Monitor success rate**: View donut chart
+
+### Troubleshooting Phase 3
+
+#### Admin panel won't load
+
+**Symptom**: Blank page or "Failed to load profile" error
+
+**Solutions**:
+1. Check if backend is running: `python app.py`
+2. Verify admin user exists in database
+3. Check browser console for errors
+4. Clear browser cache and localStorage
+
+#### "Invalid or inactive API key" when accessing admin endpoints
+
+**Cause**: Admin authentication not working
+
+**Solutions**:
+1. Login again at `/static/login.html`
+2. Check if admin user exists in `admin_users` table
+3. Verify token is being sent in Authorization header
+
+#### Charts not displaying
+
+**Symptom**: Empty chart areas
+
+**Solutions**:
 1. Check browser console for Chart.js errors
-2. Verify Chart.js CDN is accessible
-3. Check if data endpoints return valid JSON
+2. Verify Chart.js CDN is accessible: `https://cdn.jsdelivr.net/npm/chart.js`
+3. Check if data endpoints are returning valid JSON
 4. Inspect network tab for failed API calls
-5. Clear browser cache
 
-#### 13. Database Migration Fails
+#### Database migration fails
 
-**Error:** `column "created_at" does not exist`
+**Error**: `column "created_at" does not exist`
 
-**Solution:**
-
-Run migrations manually:
-```bash
-# Connect to database
+**Solution**: Migration may have syntax issues. Run migrations manually:
+```sql
+-- Connect to database
 psql -U scraper_user -d instagram_scraper
 
-# Create tables step by step
-# Copy SQL from migrations/*.sql
+-- Create indexes manually
+CREATE INDEX idx_activity_logs_event_type ON activity_logs(event_type);
+CREATE INDEX idx_scraped_reels_scraped_at ON scraped_reels(scraped_at DESC);
+-- ... etc
 ```
 
-Or drop and recreate:
-```bash
-docker-compose down -v
-docker-compose up -d
-psql -U scraper_user -d instagram_scraper -f migrations/001_multi_user_system.sql
-psql -U scraper_user -d instagram_scraper -f migrations/002_phase3_indexes_views.sql
+---
+
+### Troubleshooting Phase 1
+
+#### "Table already exists" errors
+The migration uses `CREATE TABLE IF NOT EXISTS`, so it's safe to run multiple times.
+
+#### Credits not resetting
+Check if the daily reset job is running. For now, manually reset:
+```python
+from credit_system import reset_all_daily_credits
+reset_all_daily_credits(db)
+```
+
+#### No Instagram accounts available
+Add Instagram accounts to the pool:
+```python
+create_instagram_account(db, username="...", email="...", password="...")
+```
+
+#### Account rotation not working
+Check account status:
+```python
+accounts = get_all_instagram_accounts(db)
+for acc in accounts:
+    print(f"{acc.username}: active={acc.is_active}, paused={acc.is_paused}")
 ```
 
 ---
 
 ## 🔐 Security
 
-### Best Practices
+### Security Best Practices
 
 #### Passwords
 - **SECRET_KEY:** Generate with `openssl rand -hex 32`
@@ -2478,10 +2767,6 @@ psql -U scraper_user -d instagram_scraper -f migrations/002_phase3_indexes_views
 #### Rate Limiting
 - **Enabled:** FastAPI slowapi middleware
 - **Default:** 60 requests/minute per IP
-- Adjust in `app.py`:
-  ```python
-  limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
-  ```
 
 #### Database
 - **User Isolation:** Enforced at query level
@@ -2492,26 +2777,53 @@ psql -U scraper_user -d instagram_scraper -f migrations/002_phase3_indexes_views
 - **Expiration:** 7 days (configurable)
 - **Algorithm:** HS256 (HMAC with SHA-256)
 - **Storage:** localStorage (client-side)
-- **Transmission:** Authorization header only
 
 #### API Keys
 - **Hashing:** Bcrypt hashed before storage
 - **Permissions:** JSONB field for granular control
 - **Revocation:** Set `is_active = false`
-- **Rotation:** Generate new keys periodically
 
 #### Instagram Cookies
-- **Encryption:** Store in database as JSONB
+- **Storage:** Database as JSONB
 - **Access Control:** Admin-only endpoints
-- **Expiration:** Auto-refresh every 5 days
 - **Security:** Keep cookies private (full account access)
+
+### Known Security Issues
+
+> **Note:** These issues were identified in a security review. Address them before production deployment.
+
+#### Issue 1: Hardcoded Credentials in Backend
+
+**Severity:** HIGH
+**Files:** `Backend/app.py`, `Backend/Scripts/remote_cookie_updater.py`
+
+**Problem:** Instagram credentials and API keys may be hardcoded in source files.
+
+**Remediation:**
+1. Move all credentials to environment variables
+2. Add `INSTAGRAM_EMAIL` and `INSTAGRAM_PASSWORD` to `config.py`
+3. Create `.env.example` template without real values
+4. Add sensitive scripts to `.gitignore`
+5. Rotate any exposed credentials immediately
+
+#### Issue 2: XSS via innerHTML in Frontend
+
+**Severity:** MEDIUM
+**File:** `Frontend/script.js`
+
+**Problem:** User-provided Instagram usernames inserted via `innerHTML` without escaping.
+
+**Remediation:**
+1. Use `textContent` instead of `innerHTML` for username display
+2. Implement `escapeHtml()` function (exists in `groups.js`)
+3. Add server-side validation to reject usernames with HTML characters
 
 ### Production Checklist
 
 Before deploying to production:
 
 - [ ] Change SECRET_KEY in .env
-- [ ] Change admin password
+- [ ] Change admin password (default: admin123)
 - [ ] Change database password
 - [ ] Enable HTTPS
 - [ ] Restrict CORS to production domain
@@ -2520,9 +2832,8 @@ Before deploying to production:
 - [ ] Configure firewall (ports 80, 443, 5432)
 - [ ] Set up database backups
 - [ ] Configure log rotation
-- [ ] Enable monitoring (Sentry, etc.)
+- [ ] Rotate any exposed credentials
 - [ ] Test all features
-- [ ] Load test with expected traffic
 - [ ] Create admin user with strong password
 - [ ] Document all credentials securely
 
@@ -2530,282 +2841,11 @@ Before deploying to production:
 
 ## 🤝 Contributing
 
-### Development Setup
-
-```bash
-# 1. Fork repository
-# 2. Clone your fork
-git clone https://github.com/yourusername/Instagram_reel_scrapper.git
-
-# 3. Create feature branch
-git checkout -b feature/amazing-feature
-
-# 4. Make changes
-# 5. Test thoroughly
-
-# 6. Commit changes
-git commit -m "Add some amazing feature"
-
-# 7. Push to branch
-git push origin feature/amazing-feature
-
-# 8. Open Pull Request
-```
-
-### Code Style
-
-- **Python:** PEP 8 style guide
-- **JavaScript:** ES6+ syntax
-- **SQL:** Uppercase keywords
-- **Comments:** Clear and concise
-
-### Testing
-
-Before submitting PR:
-```bash
-# Run Phase 1 tests
-cd Backend
-python test_phase1.py
-
-# Run Phase 2 tests
-python test_phase2.py
-
-# Test all features manually
-```
-
-### Areas for Improvement
-
-- [ ] Add unit tests for all modules
-- [ ] Implement Celery for distributed tasks
-- [ ] Add Redis for job queue
-- [ ] Proxy support for scraping
-- [ ] Real-time notifications (WebSockets)
-- [ ] Export to multiple formats (Excel, JSON)
-- [ ] Advanced analytics (charts, graphs)
-- [ ] Email notifications
-- [ ] Two-factor authentication
-- [ ] API rate limiting per user
-- [ ] Webhook support
-- [ ] CLI tool
-- [ ] Docker compose for full stack
-- [ ] Kubernetes deployment config
-
----
-
-## 📝 Changelog
-
-### Version 3.0.4 (December 25, 2025)
-
-**CRITICAL FIX: IST Timezone & Date Format Standardization**
-
-**Timezone Configuration:**
-- ✅ **Fixed daily reset timezone to IST (Indian Standard Time - Asia/Kolkata)**
-  - Previous: Reset at server midnight (likely UTC ~5:30 AM IST)
-  - Now: Reset at **00:00:00 IST** (midnight IST)
-  - Added `timezone=pytz.timezone('Asia/Kolkata')` to AsyncIOScheduler
-
-- ✅ Enhanced scheduler logging with timezone information
-  - Logs now show "Timezone: Asia/Kolkata (IST - Indian Standard Time)"
-  - Clear indication of scheduled reset time in IST
-
-**Date Format Standardization:**
-- ✅ **All dates now display in DD-MM-YYYY format (Indian standard)**
-  - Created global date formatter utility (`Frontend/utils/dateFormatter.js`)
-  - Replaced all US-format dates (MM/DD/YYYY) with DD-MM-YYYY
-  - Timestamps use 24-hour format: DD-MM-YYYY HH:MM:SS
-
-- ✅ Consistent date formatting across entire application:
-  - User dashboard job tracker: DD-MM-YYYY HH:MM:SS
-  - Analytics page: DD-MM-YYYY HH:MM:SS
-  - Admin panel users tab: DD-MM-YYYY
-  - Admin panel accounts tab: DD-MM-YYYY HH:MM:SS
-  - Admin panel logs tab: DD-MM-YYYY HH:MM:SS
-  - Admin panel stats charts: DD-MM-YYYY
-
-**Manual Reset Command:**
-- ✅ Added quick reset command for immediate testing:
-  ```bash
-  python -c "from scheduler import run_manual_reset; run_manual_reset()"
-  ```
-
-**Files Modified:**
-- `Backend/scheduler.py` - Added IST timezone configuration
-- `Frontend/utils/dateFormatter.js` - **NEW FILE** - Global date formatting functions
-- `Frontend/script.js` - Removed ES6 imports, use global functions
-- `Frontend/analytics.js` - Removed ES6 imports, use global functions
-- `Frontend/admin/components/users.js` - Removed ES6 imports, use global functions
-- `Frontend/admin/components/accounts.js` - Removed ES6 imports, use global functions
-- `Frontend/admin/components/logs.js` - Removed ES6 imports, use global functions
-- `Frontend/admin/components/stats.js` - Removed ES6 imports, use global functions
-- `Frontend/index.html` - Load dateFormatter.js as global script
-- `Frontend/admin/index.html` - Load dateFormatter.js as global script
-- `CLAUDE.md` - Documentation updates
-
-**Impact:**
-- ✅ Daily reset now happens at correct IST midnight
-- ✅ No more timezone confusion about "today's" usage
-- ✅ Dates easy to read for Indian users (DD-MM-YYYY)
-- ✅ Consistent 24-hour time format throughout
-- ✅ Manual reset available for immediate testing
-- ✅ Clear scheduler timezone logging
-
-**Upgrade Notes:**
-If upgrading from v3.0.3 or earlier:
-1. Restart backend server to load new timezone config
-2. Run manual reset to clear accumulated daily counters
-3. Hard refresh browser (Ctrl+Shift+R) to load new date formatting
-
----
-
-### Version 3.0.3 (December 25, 2025)
-
-**Admin Panel Design Enhancements:**
-- Replaced all emoji/text icons with professional SVG graphics throughout admin panel
-  - Dashboard overview cards now use proper SVG icons (users, accounts, reels, success rate)
-  - Sidebar navigation icons updated (dashboard, users, accounts, logs, statistics)
-  - Notification bell icon now white (#ffffff) for better visibility
-  - Activity/notification items use color-coded SVG icons
-  - Toast notifications use SVG icons (success, error, warning, info)
-
-**UI Improvements:**
-- Removed empty purple logo circle above "Admin Panel" title
-  - Set `.sidebar-logo { display: none; }` for cleaner look
-
-- Enhanced notification panel visibility and styling
-  - Added purple border (`border: 2px solid var(--accent-purple)`)
-  - Increased max-height to 500px
-  - Added border-radius for modern appearance
-  - Created dedicated CSS classes for notification items
-  - Replaced inline styles with semantic class names
-  - Added `.notification-empty` for empty state
-
-**Icon System:**
-- Created comprehensive SVG icon library with color coding:
-  - Purple (#8b5cf6): scrape_started, user_created, account_rotated, daily_reset
-  - Green (#10b981): scrape_success, cookies_updated, account_created
-  - Red (#ef4444): scrape_failed
-  - Yellow (#f59e0b): user_updated, credits_deducted
-  - Gray (#9ca3af): default fallback
-
-**Files Modified:**
-- `Frontend/admin/index.html` - Updated all icon SVGs, removed logo
-- `Frontend/admin/admin.css` - Added icon CSS classes, notification styling
-- `Frontend/admin/admin.js` - Updated notification rendering
-- `Frontend/admin/components/stats.js` - Replaced emoji icons with SVG
-- `CLAUDE.md` - Documentation updates
-
-**Impact:**
-- ✅ Professional, consistent design matching user dashboard
-- ✅ All icons clearly visible with proper colors
-- ✅ Notification panel fully functional and styled
-- ✅ No more empty circles or missing emojis
-- ✅ Improved accessibility and visual hierarchy
-
----
-
-### Version 3.0.2 (December 24, 2025)
-
-**Critical Bug Fixes:**
-- Fixed admin dashboard `/api/admin/stats/overview` 500 error
-  - Changed `ScrapingJob.created_at` → `ScrapingJob.start_time` (lines 278, 859)
-  - Changed `job.created_at` → `job.start_time` (line 288)
-  - Changed `job.completed_at` → `job.end_time` (line 289)
-  - Error resolved: "type object 'ScrapingJob' has no attribute 'created_at'"
-
-- Fixed user details modal 500 error
-  - Changed `job.target_usernames` → `job.usernames` (line 285)
-  - Changed `job.reels_scraped` → `len(job.reels)` (line 286)
-  - Error resolved: "'ScrapingJob' object has no attribute 'target_usernames'"
-
-- Fixed average reels calculation in statistics
-  - Replaced invalid `func.avg(models.ScrapingJob.reels_scraped)` query
-  - Implemented proper calculation using joined query to `ScrapedReel` table
-  - Now correctly calculates: total_reels / completed_jobs
-
-**Database Schema Alignment:**
-- Corrected all field references to match actual database schema:
-  - ✅ `usernames` (not `target_usernames`)
-  - ✅ `start_time` (not `created_at`)
-  - ✅ `end_time` (not `completed_at`)
-  - ✅ `len(job.reels)` for scraped count (no direct `reels_scraped` field)
-
-**Files Modified:**
-- `Backend/admin_routes.py` - Fixed 7 incorrect field references
-- `CLAUDE.md` - Documentation updates
-
-**Impact:**
-- ✅ Admin dashboard now loads without errors
-- ✅ System overview statistics display correctly
-- ✅ User details modal works properly
-- ✅ All admin panel features fully operational
-
----
-
-### Version 3.0.1 (December 24, 2025)
-
-**UI/UX Improvements:**
-- Redesigned "Add Instagram Account" button
-  - Now matches "Export CSV" button design from user dashboard
-  - Added professional SVG plus icon
-  - Uses proper `btn btn-primary` CSS classes
-  - Purple background (#8b5cf6) with smooth hover effects
-
-- Improved "Add Instagram Account" Modal Form
-  - Increased width from 500px to 650px (no more content overflow)
-  - Added `.modal-body` wrapper for proper structure
-  - Replaced inline styles with proper CSS classes
-  - Fixed close button to use `.modal-close` class
-  - Added clean form labels with `.form-label` class
-  - Added helper text with `.form-hint` class
-  - Improved checkbox layout with `.checkbox-label` class
-  - Professional button alignment (Cancel left, Create Account right)
-
-- Removed INFO Section
-  - Deleted useless "API Endpoint: localhost:8080" section from user dashboard
-  - Cleaned up unused CSS
-
-**Bug Fixes:**
-- Fixed activity logging error in Instagram account creation
-  - Changed `crud.log_activity()` to `crud.create_activity_log()`
-  - Error: "module 'crud' has no attribute 'log_activity'" is now resolved
-  - Activity logs now properly record `account_created` events
-
-**CSS Improvements:**
-- Added 8 new CSS classes for consistent styling:
-  - `.form-label` - Form field labels
-  - `.form-hint` - Helper text below inputs
-  - `.btn.btn-primary` - Primary action buttons
-  - `.btn.btn-secondary` - Secondary action buttons
-  - `.error-message` - Error message styling
-  - `.modal-footer` - Modal footer with button layout
-  - `.checkbox-label` - Checkbox with label styling
-- Removed conflicting modal-specific CSS overrides
-- All styles now use CSS custom properties (variables)
-
-**Documentation:**
-- Updated admin panel guide with new design features
-- Added troubleshooting entry for log_activity error
-- Updated version number to 3.0.1
-- Added recent updates section at top of documentation
-
-**Files Modified:**
-- `Frontend/admin/components/accounts.js` - Button and modal redesign
-- `Frontend/admin/admin.css` - New CSS classes and cleanup
-- `Frontend/index.html` - Removed INFO section
-- `Frontend/styles.css` - Removed INFO section CSS
-- `Backend/app.py` - Fixed activity logging function name
-- `CLAUDE.md` - Documentation updates
-
-### Version 3.0 (December 18, 2025)
-
-**Phase 3 Complete:**
-- Admin panel with user management
-- Instagram account pool monitoring
-- Activity logs viewer
-- System statistics dashboard
-- Database indexes and views for performance
-
----
+When modifying the code:
+1. Test thoroughly with various usernames
+2. Handle edge cases (private accounts, deleted accounts, etc.)
+3. Update this documentation for new features
+4. Follow the existing code style
 
 ## 📄 License
 

@@ -23,8 +23,8 @@ import os
 # ==================== CONFIGURATION ====================
 # Load configuration from environment variables for security
 
-SERVER_URL = os.getenv("COOKIE_UPDATER_SERVER_URL", "http://localhost:8080")
-API_KEY = os.getenv("COOKIE_UPDATER_API_KEY", "")
+SERVER_URL = os.getenv("COOKIE_UPDATER_SERVER_URL", "http://167.71.224.203")
+API_KEY = os.getenv("COOKIE_UPDATER_API_KEY", "_e5ZcJMpKDv0Walsv5fPsMSvuYh87KGBAFqWNd7kdrE")
 
 # Instagram accounts to update - loaded from environment variables
 # For multiple accounts, you can either:

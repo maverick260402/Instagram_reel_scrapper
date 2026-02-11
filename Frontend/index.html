@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram Reel Scraper</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Analytics Hub - Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-layout">
@@ -19,7 +19,7 @@
                     <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <span class="brand-text">IG Scraper</span>
+                <span class="brand-text">Analytics Hub</span>
             </div>
 
             <nav class="sidebar-nav">
@@ -52,7 +52,7 @@
             <header class="top-header">
                 <div class="header-content">
                     <div>
-                        <h1 class="app-title">Instagram Reel Scraper</h1>
+                        <h1 class="app-title">Scraper Dashboard</h1>
                         <p class="app-subtitle">Scrape Instagram reels data effortlessly</p>
                     </div>
                     <div class="user-info">
@@ -66,7 +66,7 @@
             <div class="page-content" id="scraper-page">
                 <div class="content-wrapper">
                     <!-- Single Username Input Section -->
-                <section class="card">
+                <section class="card animate-on-scroll">
                     <div class="card-header">
                         <h2 class="card-title">Add Single Username</h2>
                     </div>
@@ -84,7 +84,7 @@
                 </section>
 
                 <!-- User Groups Section -->
-                <section class="card">
+                <section class="card animate-on-scroll">
                     <div class="card-header">
                         <h2 class="card-title">User Groups</h2>
                         <button id="newGroupBtn" class="btn btn-primary">
@@ -102,7 +102,7 @@
                 </section>
 
                 <!-- Added Usernames Display -->
-                <section class="card" id="usernamesSection" style="display: none;">
+                <section class="card animate-on-scroll" id="usernamesSection">
                     <div class="card-header">
                         <h3 class="card-title">Added Usernames</h3>
                         <button id="clearAllBtn" class="btn btn-text">Clear All</button>
@@ -113,12 +113,12 @@
                 </section>
 
                 <!-- Separator -->
-                <div class="divider">
+                <div class="divider animate-on-scroll">
                     <span class="divider-text">OR</span>
                 </div>
 
                 <!-- Multiple Usernames Input Section -->
-                <section class="card">
+                <section class="card animate-on-scroll">
                     <div class="card-header">
                         <h2 class="card-title">Add Multiple Usernames</h2>
                         <span class="card-hint">Enter one username per line</span>
@@ -135,7 +135,7 @@
                 </section>
 
                 <!-- Reel Count Input Section -->
-                <section class="card">
+                <section class="card animate-on-scroll">
                     <div class="card-header">
                         <h2 class="card-title">Number of Reels</h2>
                     </div>
@@ -152,14 +152,14 @@
                 </section>
 
                 <!-- Scrape Button -->
-                <div class="action-bar">
+                <div class="action-bar animate-on-scroll">
                     <button id="scrapeBtn" class="btn btn-primary btn-large" disabled>
                         Start Scraping
                     </button>
                 </div>
 
                 <!-- Progress Section -->
-                <section class="card" id="progressSection" style="display: none;">
+                <section class="card animate-on-scroll" id="progressSection">
                     <div class="card-header">
                         <h3 class="card-title">Scraping Progress</h3>
                     </div>
@@ -176,14 +176,14 @@
             </div>
 
             <!-- Job Tracker Page -->
-            <div class="page-content" id="job-tracker-page" style="display: none;">
+            <div class="page-content" id="job-tracker-page">
                 <div class="content-wrapper">
-                    <section class="card">
+                    <section class="card animate-on-scroll">
                         <div class="card-header">
                             <h2 class="card-title">Job History</h2>
-                            <div style="display: flex; gap: 0.5rem;">
+                            <div>
                                 <button id="refreshHistoryBtn" class="btn btn-text">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: middle; margin-right: 0.25rem;">
+                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                         <path d="M13.65 2.35C12.2 0.9 10.21 0 8 0C3.58 0 0.01 3.58 0.01 8C0.01 12.42 3.58 16 8 16C11.73 16 14.84 13.45 15.73 10H13.65C12.83 12.33 10.61 14 8 14C4.69 14 2 11.31 2 8C2 4.69 4.69 2 8 2C9.66 2 11.14 2.69 12.22 3.78L9 7H16V0L13.65 2.35Z" fill="currentColor"/>
                                     </svg>
                                     Refresh
@@ -201,14 +201,14 @@
             </div>
 
             <!-- Analytics Page -->
-            <div class="page-content" id="analytics-page" style="display: none;">
+            <div class="page-content" id="analytics-page">
                 <div class="content-wrapper">
                     <!-- Analytics Filters -->
-                    <section class="card">
+                    <section class="card animate-on-scroll">
                         <div class="card-header">
                             <h2 class="card-title">Analytics Dashboard</h2>
                             <button id="exportCsvBtn" class="btn btn-primary">
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align: middle; margin-right: 0.25rem;">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                     <path d="M8 11L3 6H6V2H10V6H13L8 11ZM2 13H14V15H2V13Z" fill="currentColor"/>
                                 </svg>
                                 Export CSV
@@ -216,7 +216,7 @@
                         </div>
                         <div class="card-body">
                             <div class="filters-grid">
-                                <div class="filter-item" style="position: relative;">
+                                <div class="filter-item">
                                     <label for="filterUsername" class="filter-label">Username(s)</label>
                                     <input
                                         type="text"
@@ -225,8 +225,8 @@
                                         class="input-field"
                                         autocomplete="off"
                                     />
-                                    <div id="usernameSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
-                                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                                    <div id="usernameSuggestions" class="autocomplete-suggestions"></div>
+                                    <small>
                                         Separate multiple usernames with commas
                                     </small>
                                 </div>
@@ -235,7 +235,7 @@
                                     <select id="filterGroup" class="input-field">
                                         <option value="">-- Select Group --</option>
                                     </select>
-                                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                                    <small>
                                         Filter by saved group
                                     </small>
                                 </div>
@@ -279,7 +279,7 @@
                                         min="0"
                                         step="0.001"
                                     />
-                                    <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                                    <small>
                                         (Likes + Comments) / Plays
                                     </small>
                                 </div>
@@ -301,12 +301,12 @@
                                     </select>
                                 </div>
                             </div>
-                            <button id="applyFiltersBtn" class="btn btn-primary" style="margin-top: 1rem;">Apply Filters</button>
+                            <button id="applyFiltersBtn" class="btn btn-primary">Apply Filters</button>
                         </div>
                     </section>
 
                     <!-- Analytics Table -->
-                    <section class="card">
+                    <section class="card animate-on-scroll">
                         <div class="card-header">
                             <h3 class="card-title">Scraped Reels</h3>
                             <div class="analytics-stats">
@@ -336,7 +336,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="pagination" id="paginationControls" style="display: none;">
+                            <div class="pagination" id="paginationControls">
                                 <button id="prevPageBtn" class="btn btn-text" disabled>Previous</button>
                                 <button id="nextPageBtn" class="btn btn-text" disabled>Next</button>
                             </div>
@@ -367,7 +367,7 @@
                     <div class="credit-info">
                         <span class="stat-value" id="statCredits">0 / 2000</span>
                         <div class="credit-progress-bar">
-                            <div class="credit-progress-fill" id="statCreditsProgress" style="width: 0%"></div>
+                            <div class="credit-progress-fill" id="statCreditsProgress"></div>
                         </div>
                         <span class="credit-remaining" id="statCreditsRemaining">2000 left</span>
                     </div>
@@ -394,7 +394,7 @@
     </div>
 
     <!-- Group Modal -->
-    <div id="groupModal" class="modal" style="display: none;">
+    <div id="groupModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalTitle">Create New Group</h3>

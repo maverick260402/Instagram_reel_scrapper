@@ -3,348 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Instagram Reel Scraper</title>
+    <title>Login - Analytics Hub</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* Define CSS variables for login page */
-        :root {
-            --bg-primary: #000000;
-            --bg-card: #141414;
-            --text-primary: #ffffff;
-            --text-secondary: #9ca3af;
-            --accent-purple: #8b5cf6;
-            --accent-purple-hover: #a78bfa;
-            --border-color: #262626;
-        }
-
-        /* Login page specific styles */
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #000000 0%, #1a0033 100%);
-            padding: 2rem;
-        }
-
-        .login-card {
-            background: #1a1a1a;
-            border: 2px solid rgba(139, 92, 246, 0.4);
-            border-radius: 0;
-            padding: 3rem;
-            width: 100%;
-            max-width: 450px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(139, 92, 246, 0.3);
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .login-logo {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 1rem;
-            background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-        }
-
-        .login-title {
-            color: #ffffff;
-            font-size: 1.75rem;
-            font-weight: 600;
-            margin: 0 0 0.5rem 0;
-        }
-
-        .login-subtitle {
-            color: #9ca3af;
-            font-size: 0.95rem;
-        }
-
-        .form-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.5rem;
-            border-radius: 0;
-        }
-
-        .form-tab {
-            flex: 1;
-            padding: 0.75rem;
-            background: transparent;
-            border: none;
-            color: #9ca3af;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            border-radius: 0;
-            transition: all 0.3s ease;
-        }
-
-        .form-tab.active {
-            background: #8b5cf6;
-            color: #ffffff;
-        }
-
-        .form-tab:hover:not(.active) {
-            background: rgba(139, 92, 246, 0.3);
-            color: #ffffff;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            color: #ffffff;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.875rem;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid rgba(139, 92, 246, 0.5);
-            border-radius: 0;
-            color: #ffffff;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #8b5cf6;
-            background: rgba(0, 0, 0, 0.7);
-        }
-
-        .form-input::placeholder {
-            color: #6b7280;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 1rem;
-            background: #8b5cf6;
-            border: none;
-            border-radius: 0;
-            color: #ffffff;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-        }
-
-        .submit-btn:hover:not(:disabled) {
-            background: #a78bfa;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.6);
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 0;
-            padding: 0.875rem;
-            color: #ef4444;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-
-        .success-message {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 0;
-            padding: 0.875rem;
-            color: #10b981;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            display: none;
-        }
-
-        .success-message.show {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-
-        .form-footer {
-            text-align: center;
-            margin-top: 2rem;
-            color: #9ca3af;
-            font-size: 0.9rem;
-        }
-
-        .form-footer a {
-            color: #8b5cf6;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .form-footer a:hover {
-            text-decoration: underline;
-        }
-
-        .password-requirements {
-            font-size: 0.85rem;
-            color: #9ca3af;
-            margin-top: 0.5rem;
-            padding-left: 0.5rem;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .loading {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.6s linear infinite;
-            margin-left: 0.5rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div class="login-container">
-        <div class="login-card">
+<body class="auth-container">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <a href="/static/landing.html" class="auth-logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Analytics Hub</span>
+            </a>
+        </div>
 
-            <div class="form-tabs">
-                <button class="form-tab active" data-tab="login">Login</button>
-                <button class="form-tab" data-tab="signup">Sign Up</button>
+        <div class="form-tabs">
+            <button class="form-tab active" data-tab="login">Login</button>
+            <button class="form-tab" data-tab="signup">Sign Up</button>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="auth-form">
+            <div class="form-group">
+                <label class="form-label" for="loginEmail">Email</label>
+                <input
+                    type="email"
+                    id="loginEmail"
+                    class="form-input"
+                    placeholder="Enter your email"
+                    required
+                >
             </div>
 
-            <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
+            <div class="form-group">
+                <label class="form-label" for="loginPassword">Password</label>
+                <input
+                    type="password"
+                    id="loginPassword"
+                    class="form-input"
+                    placeholder="Enter your password"
+                    required
+                >
+            </div>
 
-            <!-- Login Form -->
-            <form id="loginForm" class="auth-form">
-                <div class="form-group">
-                    <label class="form-label" for="loginEmail">Email</label>
-                    <input
-                        type="email"
-                        id="loginEmail"
-                        class="form-input"
-                        placeholder="Enter your email"
-                        required
-                    >
+            <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+                Login
+            </button>
+        </form>
+
+        <!-- Signup Form -->
+        <form id="signupForm" class="auth-form" style="display: none;">
+            <div class="form-group">
+                <label class="form-label" for="signupUsername">Username</label>
+                <input
+                    type="text"
+                    id="signupUsername"
+                    class="form-input"
+                    placeholder="Choose a username"
+                    required
+                    minlength="3"
+                    maxlength="100"
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="signupEmail">Email</label>
+                <input
+                    type="email"
+                    id="signupEmail"
+                    class="form-input"
+                    placeholder="Enter your email"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="signupPassword">Password</label>
+                <input
+                    type="password"
+                    id="signupPassword"
+                    class="form-input"
+                    placeholder="Create a password"
+                    required
+                    minlength="8"
+                >
+                <div class="password-requirements">
+                    Min. 8 characters with letters and numbers
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="loginPassword">Password</label>
-                    <input
-                        type="password"
-                        id="loginPassword"
-                        class="form-input"
-                        placeholder="Enter your password"
-                        required
-                    >
-                </div>
+            <div class="form-group">
+                <label class="form-label" for="signupPasswordConfirm">Confirm Password</label>
+                <input
+                    type="password"
+                    id="signupPasswordConfirm"
+                    class="form-input"
+                    placeholder="Confirm your password"
+                    required
+                >
+            </div>
 
-                <button type="submit" class="submit-btn" id="loginBtn">
-                    Login
-                </button>
-            </form>
-
-            <!-- Signup Form -->
-            <form id="signupForm" class="auth-form" style="display: none;">
-                <div class="form-group">
-                    <label class="form-label" for="signupUsername">Username</label>
-                    <input
-                        type="text"
-                        id="signupUsername"
-                        class="form-input"
-                        placeholder="Choose a username"
-                        required
-                        minlength="3"
-                        maxlength="100"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="signupEmail">Email</label>
-                    <input
-                        type="email"
-                        id="signupEmail"
-                        class="form-input"
-                        placeholder="Enter your email"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="signupPassword">Password</label>
-                    <input
-                        type="password"
-                        id="signupPassword"
-                        class="form-input"
-                        placeholder="Create a password"
-                        required
-                        minlength="8"
-                    >
-                    <div class="password-requirements">
-                        • At least 8 characters<br>
-                        • Contains letters and numbers
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="signupPasswordConfirm">Confirm Password</label>
-                    <input
-                        type="password"
-                        id="signupPasswordConfirm"
-                        class="form-input"
-                        placeholder="Confirm your password"
-                        required
-                    >
-                </div>
-
-                <button type="submit" class="submit-btn" id="signupBtn">
-                    Create Account
-                </button>
-            </form>
-
-        </div>
+            <button type="submit" class="btn btn-primary btn-full" id="signupBtn">
+                Create Account
+            </button>
+        </form>
     </div>
-
     <script src="/static/auth.js?v=2"></script>
 </body>
 </html>
