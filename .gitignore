@@ -118,3 +118,6 @@ backup.sql
 
 # Sensitive scripts with credentials (security)
 Backend/Scripts/remote_cookie_updater.py
+# Runtime artifacts
+output/
+tmp/
